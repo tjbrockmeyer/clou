@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates a lightsail deployment pipeline for the application with the same name as the created stack.
+Parameters:
+  AppName:
+    Type: String
+    Description: The name of the application
+  GitRepo:
+    Type: String
+    Description: Url of the github repo to use
+  DevLightsailInstance:
+    Type: String
+    Description: The name of the lightsail instance for the dev environment
+  ProdLightsailInstance:
+    Type: String
+    Description: The name of the lightsail instance for the prod environment
+Resources:
+  DevAppRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AppName}-dev.app-role'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: {Fn::ImportValue: !Sub 'lightsail:${DevLightsailInstance}:UserArn'}
+            Action: 'sts:AssumeRole'
+  DevBuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/codebuild/${AppName}/dev'
+      RetentionInDays: 14
+  DevBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Role to build projects which build and deploy images for this project in the dev environment
+      Path: /user/codebuild/
+      RoleName: !Sub '${AppName}-dev.build-role'
+      ManagedPolicyArns:
+        - {Fn::ImportValue: !Sub 'lightsail:${DevLightsailInstance}:SecretsPolicyArn'}
+      Policies:
+        - PolicyName: cloudwatch-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/codebuild/${AppName}/dev:log-stream:build/*'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 'codebuild.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Tags:
+        - Key: Application
+          Value: !Ref AppName
+        - Key: Environment
+          Value: dev
+        - Key: LightsailInstance
+          Value: !Ref DevLightsailInstance
+  DevBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub '${AppName}-dev'
+      Description: Build and deploy an image in the dev environment
+      ServiceRole: !GetAtt [DevBuildRole, Arn]
+      Artifacts:
+        Type: NO_ARTIFACTS
+      LogsConfig:
+        CloudWatchLogs:
+          GroupName: !Ref DevBuildLogGroup
+          Status: ENABLED
+          StreamName: 'build'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: APP
+            Value: !Ref AppName
+            Type: PLAINTEXT
+          - Name: LIGHTSAIL_INSTANCE
+            Value: !Ref DevLightsailInstance
+            Type: PLAINTEXT
+          - Name: PRIVATE_KEY
+            Value: !Sub "/lightsail/${DevLightsailInstance}/private-key"
+            Type: PARAMETER_STORE
+          - Name: AWS_ACCESS_KEY_ID
+            Value: !Sub "/lightsail/${DevLightsailInstance}/access-key-id"
+            Type: PARAMETER_STORE
+          - Name: AWS_SECRET_ACCESS_KEY
+            Value: !Sub "/lightsail/${DevLightsailInstance}/secret-access-key"
+            Type: PARAMETER_STORE
+          - Name: APP_ROLE
+            Value: !GetAtt [DevAppRole, Arn]
+            Type: PLAINTEXT
+      Source:
+        Type: GITHUB
+        Location: !Ref GitRepo
+        GitCloneDepth: 1
+        BuildSpec: buildspecs/dev.yml
+      SourceVersion: master
+      Triggers:
+        Webhook: true
+        FilterGroups:
+          - - Type: EVENT
+              Pattern: PUSH
+            - Type: HEAD_REF
+              Pattern: ^refs/heads/master$
+      Tags:
+        - Key: Application
+          Value: !Ref AppName
+        - Key: Environment
+          Value: dev
+        - Key: LightsailInstance
+          Value: !Ref DevLightsailInstance
+Outputs:
+  DevBuildRoleName:
+    Description: The name of the CodeBuild role being used for dev builds of this project
+    Value: !Ref DevBuildRole
+    Export:
+      Name: !Sub '${AppName}:DevBuildRoleName'
+  DevAppRoleName:
+    Description: The name of the role being used by the app in dev builds of the project
+    Value: !Ref DevAppRole
+    Export:
+      Name: !Sub '${AppName}:DevAppRoleName'
