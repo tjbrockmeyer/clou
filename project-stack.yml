@@ -89,10 +89,10 @@ Resources:
           - Name: PRIVATE_KEY
             Value: !Sub "/lightsail/${DevLightsailInstance}/private-key"
             Type: PARAMETER_STORE
-          - Name: AWS_ACCESS_KEY_ID
+          - Name: INSTANCE_AWS_ACCESS_KEY_ID
             Value: !Sub "/lightsail/${DevLightsailInstance}/access-key-id"
             Type: PARAMETER_STORE
-          - Name: AWS_SECRET_ACCESS_KEY
+          - Name: INSTANCE_AWS_SECRET_ACCESS_KEY
             Value: !Sub "/lightsail/${DevLightsailInstance}/secret-access-key"
             Type: PARAMETER_STORE
           - Name: APP_ROLE
