@@ -47,6 +47,13 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/codebuild/${AppName}/dev:log-stream:build/*'
+        - PolicyName: lightsail-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'lightsail:GetInstance'
+                Resource: !Sub 'arn:aws:lightsail:${AWS::Region}:${AWS::AccountId}:Instance/${DevLightsailInstance}'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
