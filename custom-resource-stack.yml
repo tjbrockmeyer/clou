@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Parameters:
-  ResourceName:
+  ResourceName: 
     Type: String
     Description: Name of the custom resource
     AllowedValues:
@@ -20,7 +20,6 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Description: !Sub 'Role used by the ${ResourceName} Custom Resource'
-      Path: /user/codebuild/
       RoleName: !Sub 'cfn-custom-resource-${ResourceName}.role'
       Policies:
         - PolicyName: cloudwatch-access
@@ -39,11 +38,13 @@ Resources:
             Principal:
               Service: 'lambda.amazonaws.com'
             Action: 'sts:AssumeRole'
+
   ResourceLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/cfn-custom-resource-${ResourceName}'
       RetentionInDays: 7
+
   Resource:
     Type: AWS::Lambda::Function
     Properties:
