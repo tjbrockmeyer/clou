@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      BucketName: !Sub ${AWS::AccountId}-main-bucket
+      BucketEncryption: 
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: 
+              SSEAlgorithm: AES256
+  BucketNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /global/bucket-name
+      Type: String
+      Value: !Ref Bucket
+  
+  StackNotificationsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: stack-notifications-topic
+  StackNotificationsTopicParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /global/stack-notifications-topic-arn
+      Type: String
+      Value: !Ref StackNotificationsTopic

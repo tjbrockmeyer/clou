@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  BucketName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /global/bucket-name
+
+Outputs:
+  LightsailInstanceFunctionArn:
+    Value: !GetAtt LightsailInstanceCustomResource.Arn
+    Export:
+      Name: !Ref LightsailInstanceCustomResource
+  LightsailKeyPairFunctionArn:
+    Value: !GetAtt LightsailKeyPairCustomResource.Arn
+    Export:
+      Name: !Ref LightsailKeyPairCustomResource
+  LightsailStaticIpFunctionArn:
+    Value: !GetAtt LightsailStaticIpCustomResource.Arn
+    Export:
+      Name: !Ref LightsailStaticIpCustomResource
+  SecretStringParameterFunctionArn:
+    Value: !GetAtt SecretStringParameterCustomResource.Arn
+    Export:
+      Name: !Ref SecretStringParameterCustomResource
+
+Resources:
+
+  LightsailInstanceCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: cfn-custom-resource-lightsail-instance
+      Handler: lambda_function.handler
+      Runtime: python3.8
+      Timeout: 120
+      CodeUri: !Sub s3://${BucketName}/code/custom-resources/lightsail-instance.zip
+      Policies:
+        - PolicyName: InlinePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lightsail:CreateInstances
+                  - lightsail:GetInstanceState
+                  - lightsail:GetInstance
+                  - lightsail:DeleteInstance
+                  - lightsail:AttachStaticIp
+                  - lightsail:DetachStaticIp
+                Resource: !Sub arn:aws:lightsail:*:${AWS::AccountId}:*
+
+  LightsailKeyPairCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: cfn-custom-resource-lightsail-key-pair
+      Handler: lambda_function.handler
+      Runtime: python3.8
+      Timeout: 20
+      CodeUri: !Sub s3://${BucketName}/code/custom-resources/lightsail-key-pair.zip
+      Policies:
+        - PolicyName: InlinePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lightsail:CreateKeyPair
+                  - lightsail:DeleteKeyPair
+                Resource: !Sub arn:aws:lightsail:*:${AWS::AccountId}:*
+
+  LightsailStaticIpCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: cfn-custom-resource-lightsail-static-ip
+      Handler: lambda_function.handler
+      Runtime: python3.8
+      Timeout: 20
+      CodeUri: !Sub s3://${BucketName}/code/custom-resources/lightsail-static-ip.zip
+      Policies:
+        - PolicyName: InlinePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lightsail:GetStaticIp
+                  - lightsail:ReleaseStaticIp
+                  - lightsail:GetInstanceState
+                  - lightsail:AttachStaticIp
+                  - lightsail:DetachStaticIp
+                  - lightsail:AllocateStaticIp
+                Resource: !Sub arn:aws:lightsail:*:${AWS::AccountId}:*
+
+  SecureStringParameterCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: cfn-custom-resource-secure-string-parameter
+      Handler: lambda_function.handler
+      Runtime: python3.8
+      Timeout: 20
+      CodeUri: !Sub s3://${BucketName}/code/custom-resources/secure-string-parameter.zip
+      Policies:
+        - PolicyName: InlinePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:DeleteParameter
+                Resource: !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/*
