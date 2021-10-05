@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  InstanceName:
+  Name:
     Type: String
     Description: The name of the lightsail instance
 
@@ -10,12 +10,12 @@ Outputs:
     Description: Arn of the user for the lightsail instance
     Value: !GetAtt User.Arn
     Export:
-      Name: !Sub lightsail-${AWS::Region}-${InstanceName}-UserArn
+      Name: !Sub lightsail-${AWS::Region}-${Name}-UserArn
   SecretsPolicyArn:
     Description: Arn of policy for access to secrets of the lightsail instance.
     Value: !Ref SecretsPolicy
     Export:
-      Name: !Sub lightsail-${AWS::Region}-${InstanceName}-SecretsPolicyArn
+      Name: !Sub lightsail-${AWS::Region}-${Name}-SecretsPolicyArn
 
 Resources:
 
@@ -23,14 +23,14 @@ Resources:
     Type: Custom::LightsailKeyPair
     Properties:
       ServiceToken: !ImportValue cfn-custom-resource-lightsail-key-pair
-      KeyPairName: !Sub lightsail-key-pair-${InstanceName}
+      KeyPairName: !Sub lightsail-key-pair-${Name}
 
   InstanceKeyPairParam:
     Type: Custom::SecureStringParameter
     Properties:
       ServiceToken: !ImportValue cfn-custom-resource-secure-string-parameter
-      Name: !Sub /lightsail/${InstanceName}/private-key
-      Description: !Sub Private Key for the lightsail key pair for instance ${InstanceName}
+      Name: !Sub /lightsail/${Name}/private-key
+      Description: !Sub Private Key for the lightsail key pair for instance ${Name}
       Type: SecureString
       Value: !GetAtt InstanceKeyPair.PrivateKey
 
@@ -38,23 +38,23 @@ Resources:
     Type: Custom::LightsailStaticIp
     Properties:
       ServiceToken: !ImportValue cfn-custom-resource-lightsail-static-ip
-      StaticIpName: !Sub lightsail-static-ip-${InstanceName}
+      StaticIpName: !Sub lightsail-static-ip-${Name}
 
   Instance:
     Type: Custom::LightsailInstance
     Properties:
       ServiceToken: !ImportValue cfn-custom-resource-lightsail-instance
-      InstanceName: !Ref InstanceName
+      InstanceName: !Ref Name
       KeyPairName: !Ref InstanceKeyPair
       StaticIpName: !Ref StaticIp
 
   User:
     Type: AWS::IAM::User
     Properties:
-      UserName: !Sub lightsail-user-${AWS::Region}-${InstanceName}
+      UserName: !Sub lightsail-user-${AWS::Region}-${Name}
       Tags:
         - Key: LightsailInstance
-          Value: !Ref InstanceName
+          Value: !Ref Name
   UserAccessKey:
     Type: AWS::IAM::AccessKey
     Properties:
@@ -64,20 +64,20 @@ Resources:
     Type: Custom::SecureStringParameter
     Properties:
       ServiceToken: !ImportValue cfn-custom-resource-secure-string-parameter
-      Name: !Sub /lightsail/${InstanceName}/access-key
-      Description: !Sub Access Key ID for the lightsail user for instance ${InstanceName}
+      Name: !Sub /lightsail/${Name}/access-key
+      Description: !Sub Access Key ID for the lightsail user for instance ${Name}
       Type: SecureString
       Value: !Sub '{"accessKeyId":"${UserAccessKey}","secretAccessKey":"${UserAccessKey.SecretAccessKey}"}'
   SecretsPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      ManagedPolicyName: !Sub lightsail-${InstanceName}-secrets-policy
-      Description: !Sub Grants permissions to protected elements of the ${InstanceName} Lightsail instance.
+      ManagedPolicyName: !Sub lightsail-${AWS::Region}-${Name}-ReadSecrets
+      Description: !Sub Grants permissions to protected elements of the ${Name} Lightsail instance.
       PolicyDocument:
         Version: 2012-10-17
         Statement:
           - Effect: Allow
             Action: ssm:GetParameter*
             Resource:
-              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/lightsail/${InstanceName}/private-key'
-              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/lightsail/${InstanceName}/access-key'
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/lightsail/${Name}/private-key'
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/lightsail/${Name}/access-key'
