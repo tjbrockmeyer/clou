@@ -1,0 +1,39 @@
+{
+    "SwarmName": "my-swarm",
+    "StackName": "linkbot",
+    "RoleName": "lambdarole",
+    "Services": [
+        {
+            "Name": "bot",
+            "Image": "127.0.0.1:5000/linkbot",
+            "EnvironmentVariables": [
+                {
+                    "Name": "MY_ENV_VAR",
+                    "Value": "This is a value"
+                }
+            ],
+            "Secrets": [
+                "database_user",
+                "database",
+                "discord_creds"
+            ]
+        }
+    ],
+    "Secrets": [
+        {
+            "Name": "database_user",
+            "Source": "PARAMETER_STORE",
+            "Path": "/mongodb/user/tyler"
+        },
+        {
+            "Name": "database",
+            "Source": "PARAMETER_STORE",
+            "Path": "/mongodb/database/linkbot/np"
+        },
+        {
+            "Name": "discord_creds",
+            "Source": "PARAMETER_STORE",
+            "Path": "/discord/bot/link-bot"
+        }
+    ]
+}

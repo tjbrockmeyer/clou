@@ -5,17 +5,7 @@ Parameters:
     Type: String
     Description: The name of the lightsail instance
 
-Outputs:
-  UserArn:
-    Description: Arn of the user for the lightsail instance
-    Value: !GetAtt User.Arn
-    Export:
-      Name: !Sub lightsail-${AWS::Region}-${Name}-UserArn
-  SecretsPolicyArn:
-    Description: Arn of policy for access to secrets of the lightsail instance.
-    Value: !Ref SecretsPolicy
-    Export:
-      Name: !Sub lightsail-${AWS::Region}-${Name}-SecretsPolicyArn
+Outputs: {}
 
 Resources:
 
@@ -46,38 +36,6 @@ Resources:
       ServiceToken: !ImportValue cfn-custom-resource-lightsail-instance
       InstanceName: !Ref Name
       KeyPairName: !Ref InstanceKeyPair
+      PrivateKey: !GetAtt InstanceKeyPair.PrivateKey
+      AvailabilityZone: us-east-1a
       StaticIpName: !Ref StaticIp
-
-  User:
-    Type: AWS::IAM::User
-    Properties:
-      UserName: !Sub lightsail-user-${AWS::Region}-${Name}
-      Tags:
-        - Key: LightsailInstance
-          Value: !Ref Name
-  UserAccessKey:
-    Type: AWS::IAM::AccessKey
-    Properties:
-      Serial: 0
-      UserName: !Ref User
-  AccessKeyParameter:
-    Type: Custom::SecureStringParameter
-    Properties:
-      ServiceToken: !ImportValue cfn-custom-resource-secure-string-parameter
-      Name: !Sub /lightsail/${Name}/access-key
-      Description: !Sub Access Key ID for the lightsail user for instance ${Name}
-      Type: SecureString
-      Value: !Sub '{"accessKeyId":"${UserAccessKey}","secretAccessKey":"${UserAccessKey.SecretAccessKey}"}'
-  SecretsPolicy:
-    Type: AWS::IAM::ManagedPolicy
-    Properties:
-      ManagedPolicyName: !Sub lightsail-${AWS::Region}-${Name}-ReadSecrets
-      Description: !Sub Grants permissions to protected elements of the ${Name} Lightsail instance.
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action: ssm:GetParameter*
-            Resource:
-              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/lightsail/${Name}/private-key'
-              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/lightsail/${Name}/access-key'

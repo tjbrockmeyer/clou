@@ -1,0 +1,130 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates a lightsail deployment pipeline for the application
+
+Parameters:
+  AppName:
+    Type: String
+    Description: The name of the application
+  GitRepo:
+    Type: String
+    Description: Url of the github repo to use
+  LightsailInstance:
+    Type: String
+    Description: The name of the lightsail instance for the dev environment
+
+Outputs:
+  BuildRoleName:
+    Description: The name of the CodeBuild role being used for dev builds of this project
+    Value: !Ref BuildRole
+    Export:
+      Name: !Sub ${AppName}-BuildRoleName
+  AppRoleName:
+    Description: The name of the role being used by the app in dev builds of the project
+    Value: !Ref AppRole
+    Export:
+      Name: !Sub ${AppName}-AppRoleName
+
+Resources:
+  AppRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::Region}-${AppName}-dev-AppRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: {Fn::ImportValue: !Sub 'lightsail-${AWS::Region}-${LightsailInstance}-UserArn'}
+            Action: sts:AssumeRole
+  DevBuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/codebuild/${AppName}-dev
+      RetentionInDays: 7
+  BuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Role to build projects which build and deploy images for this project in the dev environment
+      RoleName: !Sub ${AWS::Region}-${AppName}-dev-CodeBuildRole
+      ManagedPolicyArns:
+        - {Fn::ImportValue: !Sub 'lightsail-${AWS::Region}-${LightsailInstance}-SecretsPolicyArn'}
+      Policies:
+        - PolicyName: InlinePolicy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/codebuild/${AppName}/dev:log-stream:build/*
+              - Effect: Allow
+                Action: lightsail:GetInstance
+                Resource: !Sub arn:aws:lightsail:${AWS::Region}:${AWS::AccountId}:Instance/${LightsailInstance}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Tags:
+        - Key: Application
+          Value: !Ref AppName
+        - Key: Environment
+          Value: dev
+        - Key: LightsailInstance
+          Value: !Ref LightsailInstance
+  # DevBuildProject:
+  #   Type: AWS::CodeBuild::Project
+  #   Properties:
+  #     Name: !Sub ${AppName}-dev-build-deploy-image
+  #     Description: Build and deploy an image in the dev environment
+  #     ServiceRole: !GetAtt BuildRole.Arn
+  #     Artifacts:
+  #       Type: NO_ARTIFACTS
+  #     LogsConfig:
+  #       CloudWatchLogs:
+  #         GroupName: !Ref DevBuildLogGroup
+  #         Status: ENABLED
+  #         StreamName: build
+  #     Environment:
+  #       Type: LINUX_CONTAINER
+  #       ComputeType: BUILD_GENERAL1_SMALL
+  #       Image: aws/codebuild/standard:4.0
+  #       PrivilegedMode: true
+  #       EnvironmentVariables:
+  #         - Type: PLAINTEXT
+  #           Name: APP
+  #           Value: !Ref AppName
+  #         - Type: PLAINTEXT
+  #           Name: LIGHTSAIL_INSTANCE
+  #           Value: !Ref LightsailInstance
+  #         - Type: PARAMETER_STORE
+  #           Name: PRIVATE_KEY
+  #           Value: !Sub /lightsail/${LightsailInstance}/private-key
+  #         - Type: PARAMETER_STORE
+  #           Name: INSTANCE_ACCESS_KEY
+  #           Value: !Sub /lightsail/${LightsailInstance}/access-key
+  #         - Type: PLAINTEXT
+  #           Name: APP_ROLE
+  #           Value: !GetAtt AppRole.Arn
+  #     Source:
+  #       Type: GITHUB
+  #       Location: !Ref GitRepo
+  #       GitCloneDepth: 1
+  #       BuildSpec: buildspecs/dev.yml
+  #     SourceVersion: master
+  #     Triggers:
+  #       Webhook: true
+  #       FilterGroups:
+  #         - - Type: EVENT
+  #             Pattern: PUSH
+  #           - Type: HEAD_REF
+  #             Pattern: ^refs/heads/master$
+  #     Tags:
+  #       - Key: Application
+  #         Value: !Ref AppName
+  #       - Key: Environment
+  #         Value: dev
+  #       - Key: LightsailInstance
+  #         Value: !Ref LightsailInstance

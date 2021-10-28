@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+APP_NAME="$1"
+INSTANCE="$2"
+
+if [[ -z "$APP_NAME" ]] || [[ -z "$INSTANCE" ]]; then
+    echo "usage: lightsail-docker-deploy.sh <app-name> <lightsail-instance-name>"
+    exit 1
+fi
+
+PUBLIC_IP=$(aws lightsail get-instance --instance-name "$INSTANCE" --output text --query instance.publicIpAddress)
+USER=$(aws lightsail get-instance --instance-name "$INSTANCE" --output text --query instance.username)
+IDENTITY=/tmp/lightsail-private-key
+KNOWN_HOSTS=/tmp/known_hosts
+HOST="$USER@$PUBLIC_IP"
+OPTS="-i \"$IDENTITY\" -o \"UserKnownHostsFile=$KNOWN_HOSTS\""
+
+ssh-keyscan "$PUBLIC_IP" >> "$KNOWN_HOSTS"
+printf -- "$(aws ssm get-parameter --name "/lightsail/$INSTANCE/private-key" --with-decryption --output text --query 'Parameter.Value')" > "$IDENTITY"
+chmod 400 "$IDENTITY"
+
+scp -r $OPTS . "$HOST:/tmp/$APP_NAME"
+ssh $OPTS $HOST "\
+docker compose build && \
+docker compose push && \
+docker stack deploy --compose-file docker-compose.yml $APP_NAME"

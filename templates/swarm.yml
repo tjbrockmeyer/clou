@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  SwarmName:
+    Type: String
+    Description: The name of the docker swarm
+
+Outputs:
+  SwarmName:
+    Value: !Ref Swarm
+    Export:
+      Name: !Sub ${AWS::StackName}-SwarmName
+
+Resources:
+
+  # InstanceKeyPair:
+  #   Type: Custom::LightsailKeyPair
+  #   Properties:
+  #     ServiceToken: !ImportValue cfn-custom-resource-lightsail-key-pair
+  #     KeyPairName: !Sub lightsail-key-pair-${SwarmName}-node-1
+  # InstanceKeyPairParam:
+  #   Type: Custom::SecureStringParameter
+  #   Properties:
+  #     ServiceToken: !ImportValue cfn-custom-resource-secure-string-parameter
+  #     Name: !Sub /lightsail/${SwarmName}-node-1/private-key
+  #     Description: !Sub Private Key for the lightsail key pair for instance ${SwarmName}-node-1
+  #     Type: SecureString
+  #     Value: !GetAtt InstanceKeyPair.PrivateKey
+  # StaticIp:
+  #   Type: Custom::LightsailStaticIp
+  #   Properties:
+  #     ServiceToken: !ImportValue cfn-custom-resource-lightsail-static-ip
+  #     StaticIpName: !Sub lightsail-static-ip-${SwarmName}-node-1
+  # Instance:
+  #   Type: Custom::LightsailInstance
+  #   Properties:
+  #     ServiceToken: !ImportValue cfn-custom-resource-lightsail-instance
+  #     InstanceName: !Sub ${SwarmName}-node-1
+  #     KeyPairName: !Ref InstanceKeyPair
+  #     PrivateKey: !GetAtt InstanceKeyPair.PrivateKey
+  #     AvailabilityZone: us-east-1a
+  #     StaticIpName: !Ref StaticIp
+
+  Swarm:
+    Type: Custom::DockerSwarm
+    Properties:
+      ServiceToken: !ImportValue cfn-custom-resource-docker-swarm
+      SwarmName: my-swarm
+      ManagerInstanceNames:
+        - LS1
