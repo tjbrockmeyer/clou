@@ -4,9 +4,11 @@ set -e
 
 
 INSTANCE="$1"
+LOCAL_FILE="$2"
+REMOTE_FILE="$3"
 
-if [[ -z "$INSTANCE" ]]; then
-    echo "usage: lightsail-ssh.sh <lightsail-instance-name>"
+if [[ -z "$INSTANCE" ]] || [[ -z "$LOCAL_FILE" ]] || [[ -z "$REMOTE_FILE" ]]; then
+    echo "usage: lightsail-ssh.sh <lightsail-instance-name> <local-file> <remote-file>"
     exit 1
 fi
 
@@ -23,4 +25,4 @@ ssh-keyscan "$PUBLIC_IP" >> "$KNOWN_HOSTS" 2>/dev/null
 printf -- "$(aws ssm get-parameter --name " /lightsail/$INSTANCE/private-key" --with-decryption --output text --query 'Parameter.Value')" > "$IDENTITY"
 chmod 400 "$IDENTITY"
 
-ssh $OPTS "$HOST" ${@: 2}
+scp $OPTS "$LOCAL_FILE" "$HOST:$REMOTE_FILE"

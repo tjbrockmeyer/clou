@@ -34,33 +34,17 @@ const getSshConfigs = async (instanceNames) => {
     });
 };
 
-const getBaseComposeFile = (props) => {
-    return {
-        version: '3.9',
-        services: Object.assign({}, ...props.Services.map(s => ({
-            [s.Name]: {
-                image: s.Image,
-                environment: s.EnvironmentVariables.map(v => 
-                    `${v.Name}=${v.Value}`),
-                logging: {
-                    driver: 'awslogs',
-                    'awslogs-group': `/docker/swarm/${props.SwarmName}`,
-                    'awslogs-region': region,
-                    'awslogs-create-group': true,
-                    'awslogs-datetime-format': s.Logging.DateTimeFormat,
-                    'awslogs-multiline-pattern': s.Logging.MultilinePattern,
-                }
-            }
-        })))
-    }
-}
-
 const getManagerDiscovery = async (swarmName) => {
     await ssm.getParameter({Name: `/docker-swarm/${swarmName}/manager`}).promise();
 }
 
 const getStackRole = async (roleName) => {
     return await iam.getRole({RoleName: roleName}).promise();
+}
+
+const writeComposeSettings = async (sshConfig, settings) => {
+    const ssh = new SSH2(sshConfig);
+    ssh.
 }
 
 const validateProperties = (ResourceProperties) => {
@@ -92,8 +76,8 @@ const main = async (event, context) => {
 
     validateProperties(ResourceProperties);
 
-    const sshConfigs = new Map(allInstances.map((name, i) => [name, allSshConfigs[i]]));
-    const settings = {StackName, Services, Secrets};
+    const managerInstance = await getManagerDiscovery(SwarmName);
+    const sshConfig = await getSshConfigs([managerInstance]);
 
     switch(RequestType) {
         case 'Update': {

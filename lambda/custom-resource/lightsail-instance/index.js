@@ -12,10 +12,6 @@ sudo amazon-linux-extras install docker
 sudo service docker start
 sudo usermod -a -G docker ec2-user`
 
-const command = () => `
-echo "export LIGHTSAIL_INSTANCE_NAME=${instanceName}" >> /home/${username}/.bash_profile &&
-sudo printf '${asRole}' > /usr/bin/as-role`;
-
 const getSshConfig = async (instanceName, privateKey) => {
     const {instance} = await lightsail.getInstance({instanceName}).promise();
     console.log(instance);
@@ -57,13 +53,16 @@ const createInstance = async (instanceName, keyPairName, privateKey, availabilit
     await new Promise(r => setTimeout(r, 10000)); // wait for ssh to initialize
     const sshConfig = await getSshConfig(instanceName, privateKey);
     const ssh = new SSH2(sshConfig);
-    const asRole = await fs.readFile('./as-role.sh', 'utf-8');
+    const files = ['as-role.sh', 'composer.py'];
+    const executableFiles = (await Promise.all(files.map(async filename => {
+        const content = await fs.readFile(filename, 'utf-8');
+        return `printf -- '${content}' > bin/${filename} && chmod 744 bin/${filename}`;
+    }))).join(' && ');
     await ssh.exec(`\
 echo "export LIGHTSAIL_INSTANCE_NAME=${instanceName}" >> .bash_profile &&
 echo "export PATH=\\"\\$PATH:/home/${sshConfig.username}/bin\\"" >> .bash_profile &&
 mkdir bin &&
-printf -- '${asRole}' > bin/as-role &&
-chmod 744 bin/as-role`);
+${executableFiles}`);
 }
 
 const deleteInstance = async (instanceName) => {

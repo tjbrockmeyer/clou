@@ -52,9 +52,6 @@ def to_yaml(object):
     return '\n'.join(_to_yaml(object))
 
 
-
-
-
 def iam_get_role(role_name):
     try:
         p = subprocess.run(
@@ -149,8 +146,16 @@ def docker_secret_rm(*names):
         return e.stderr, False
 
 
+def docker_stack_build(compose_file, stack_name):
+    try:
+        p = subprocess.run(['docker', 'stack', 'deploy', '-c', '-', stack_name], 
+                           text=True, input=compose_file, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        return p.stdout, True
+    except subprocess.CalledProcessError as e:
+        return e.stderr, False
 
-def docker_stack_deploy(compose_file, stack_name):
+
+def docker_stack_build(compose_file, stack_name):
     try:
         p = subprocess.run(['docker', 'stack', 'deploy', '-c', '-', stack_name], 
                            text=True, input=compose_file, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
@@ -258,7 +263,7 @@ def main(settings_file):
     with open(settings_file, 'w') as f:
         json.dump(settings, f, indent=4)
     
-    output, ok = docker_stack_deploy(compose_file, stack_name)
+    output, ok = docker_stack_build(compose_file, stack_name)
     print(output)
     if ok:
         full_names = [
