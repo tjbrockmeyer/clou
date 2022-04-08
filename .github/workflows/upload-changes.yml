@@ -25,13 +25,8 @@ jobs:
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::060868188835:role/infra-github-runner
 
-      - name: Check permissions
-        run: |
-          ls -la ./aws/main
-          ls -la ./aws/scripts
-
       - name: Upload Changes
-        run: bash ./aws/main/custom-resources
+        run: ./aws/main/custom-resources
 
       # - name: Get Changed Files
       #   id: files
