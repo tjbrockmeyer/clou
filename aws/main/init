@@ -5,4 +5,3 @@ cd "$DIR/.."
 
 ./bin/cfn-deploy templates/main.yml main-stack
 ./main/custom-resources
-./main/gha-creds apply

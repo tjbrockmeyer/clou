@@ -1,9 +1,12 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  GHACredentialsSerial:
-    Type: Number
-    Default: 0
+  GitHubOrg:
+    Type: String
+    Default: tjbrockmeyer
+  RepositoryName:
+    Type: String
+    Default: infra
 
 Resources:
   Bucket:
@@ -32,24 +35,42 @@ Resources:
       Type: String
       Value: !Ref StackNotificationsTopic
 
-  GHAUser:
-    Type: AWS::IAM::User
-    Properties: 
-      UserName: github-runner
-  
-  GHAKey:
-    Type: AWS::IAM::AccessKey
+  GithubOidc:
+    Type: AWS::IAM::OIDCProvider
     Properties:
-      Serial: !Ref GHACredentialsSerial
-      Status: Active
-      UserName: !Ref GHAUser
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: 
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
 
-  GHAKeyParameter:
-    Type: Custom::SecureStringParameter
+  GHARole:
+    Type: AWS::IAM::Role
     Properties:
-      ServiceToken: !ImportValue cfn-custom-resource-secure-string-parameter
-      Name: /github/runner/credentials
-      Description: Credentials for the github runner user
-      Type: SecureString
-      Value: !Sub |
-        {"awsAccessKeyId":"${GHAKey}","awsSecretAccessKey":"${GHAKey.SecretAccessKey}"}
+      RoleName: 'infra-github-runner'
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument: 
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !Ref GithubOidc
+            Condition:
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${RepositoryName}:*
+      Policies:
+        - PolicyName: 'inline'
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'
+              - Effect: Deny
+                Action: 'iam:*'
+                Resource: '*'
+              - Effect: Allow
+                Action: 
+                  - 'iam:CreateAccessKey'
+                  - 'iam:UpdateAccessKey'
+                Resource: '*'
