@@ -23,10 +23,10 @@ else
     VERSION=0
 fi
 
-cd "$DIR/../lambda/custom-resource"
+cd "$DIR/../lambda"
 BUCKET=$(aws ssm get-parameter --name ' /global/bucket-name' --output text --query 'Parameter.Value')
 PIDS=
-for PACKAGE in *; do 
+for PACKAGE in custom-resource/*; do 
     if [[ -e "$PACKAGE/requirements.txt" ]]; then
         "$PACKAGE_CODE" "$PACKAGE" "$BUCKET" "$PACKAGE/v$VERSION" \
             "mkdir site-packages 2>/dev/null" \
@@ -37,7 +37,7 @@ for PACKAGE in *; do
             "" "NODE_ENV=production npm ci --silent" &
         PIDS+=" $!"
     else 
-        echo "update-custom-resources: no valid packaging command for this directory: $PACKAGE"
+        echo "$(basename "$0"): no valid packaging command for this directory: $PACKAGE"
     fi
 done
 

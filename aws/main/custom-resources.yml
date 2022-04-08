@@ -32,14 +32,14 @@ Outputs:
     Value: !GetAtt SecureStringParameterCustomResource.Arn
     Export:
       Name: cfn-custom-resource-secure-string-parameter
-  DockerSwarmFunctionArn:
-    Value: !GetAtt DockerSwarmCustomResource.Arn
-    Export:
-      Name: cfn-custom-resource-docker-swarm
-  DockerStackFunctionArn:
-    Value: !GetAtt DockerStackCustomResource.Arn
-    Export:
-      Name: cfn-custom-resource-docker-stack
+  # DockerSwarmFunctionArn:
+  #   Value: !GetAtt DockerSwarmCustomResource.Arn
+  #   Export:
+  #     Name: cfn-custom-resource-docker-swarm
+  # DockerStackFunctionArn:
+  #   Value: !GetAtt DockerStackCustomResource.Arn
+  #   Export:
+  #     Name: cfn-custom-resource-docker-stack
 
 Resources:
 
@@ -123,48 +123,48 @@ Resources:
               - ssm:DeleteParameter
             Resource: !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/*
 
-  DockerSwarmCustomResource:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: cfn-custom-resource-docker-swarm
-      Handler: index.handler
-      Runtime: nodejs14.x
-      Timeout: 600
-      CodeUri:
-        Bucket: !Ref BucketName
-        Key: !Sub code/custom-resource/docker-swarm/${CodeVersion}.zip
-      Policies:
-        - Statement:
-          - Effect: Allow
-            Action: ssm:GetParameter*
-            Resource: !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/lightsail/*/private-key
-          - Effect: Allow
-            Action: lightsail:GetInstances
-            Resource: !Sub arn:aws:lightsail:*:${AWS::AccountId}:*
-          - Effect: Allow
-            Action:
-              - ssm:GetParameter
-              - ssm:PutParameter
-              - ssm:DeleteParameter
-            Resource: !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/docker-swarm/*/manager
+  # DockerSwarmCustomResource:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: cfn-custom-resource-docker-swarm
+  #     Handler: index.handler
+  #     Runtime: nodejs14.x
+  #     Timeout: 600
+  #     CodeUri:
+  #       Bucket: !Ref BucketName
+  #       Key: !Sub code/custom-resource/docker-swarm/${CodeVersion}.zip
+  #     Policies:
+  #       - Statement:
+  #         - Effect: Allow
+  #           Action: ssm:GetParameter*
+  #           Resource: !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/lightsail/*/private-key
+  #         - Effect: Allow
+  #           Action: lightsail:GetInstances
+  #           Resource: !Sub arn:aws:lightsail:*:${AWS::AccountId}:*
+  #         - Effect: Allow
+  #           Action:
+  #             - ssm:GetParameter
+  #             - ssm:PutParameter
+  #             - ssm:DeleteParameter
+  #           Resource: !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/docker-swarm/*/manager
 
-  DockerStackCustomResource:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: cfn-custom-resource-docker-stack
-      Handler: index.handler
-      Runtime: nodejs14.x
-      Timeout: 600
-      CodeUri:
-        Bucket: !Ref BucketName
-        Key: !Sub code/custom-resource/docker-stack/${CodeVersion}.zip
-      Policies:
-        - Statement:
-          - Effect: Allow
-            Action: ssm:GetParameter*
-            Resource: 
-              - !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/lightsail/*/private-key
-              - !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/docker-swarm/*/manager
-          - Effect: Allow
-            Action: lightsail:GetInstances
-            Resource: !Sub arn:aws:lightsail:*:${AWS::AccountId}:*
+  # DockerStackCustomResource:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: cfn-custom-resource-docker-stack
+  #     Handler: index.handler
+  #     Runtime: nodejs14.x
+  #     Timeout: 600
+  #     CodeUri:
+  #       Bucket: !Ref BucketName
+  #       Key: !Sub code/custom-resource/docker-stack/${CodeVersion}.zip
+  #     Policies:
+  #       - Statement:
+  #         - Effect: Allow
+  #           Action: ssm:GetParameter*
+  #           Resource: 
+  #             - !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/lightsail/*/private-key
+  #             - !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/docker-swarm/*/manager
+  #         - Effect: Allow
+  #           Action: lightsail:GetInstances
+  #           Resource: !Sub arn:aws:lightsail:*:${AWS::AccountId}:*
