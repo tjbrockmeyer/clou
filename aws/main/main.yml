@@ -1,12 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  GitHubOrg:
+  Repo:
     Type: String
-    Default: tjbrockmeyer
-  RepositoryName:
-    Type: String
-    Default: infra
+    Default: tjbrockmeyer/infra
 
 Outputs:
   GithubOidcOut:
@@ -63,7 +60,7 @@ Resources:
               Federated: !Ref GithubOidc
             Condition:
               StringLike:
-                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${RepositoryName}:*
+                token.actions.githubusercontent.com:sub: !Sub repo:${Repo}:*
       Policies:
         - PolicyName: 'inline'
           PolicyDocument:
@@ -73,8 +70,8 @@ Resources:
                 Action: '*'
                 Resource: '*'
               - Effect: Deny
-                Action: 'iam:*'
-                Resource: '*'
-              - Effect: Allow
-                Action: 'iam:*Role*'
+                Action: 
+                  - 'iam:*User*'
+                  - 'iam:*Service*'
+                  - 'iam:*Password*'
                 Resource: '*'
