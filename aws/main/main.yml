@@ -1,5 +1,10 @@
 AWSTemplateFormatVersion: 2010-09-09
 
+Parameters:
+  GHACredentialsSerial:
+    Type: Number
+    Default: 0
+
 Resources:
   Bucket:
     Type: AWS::S3::Bucket
@@ -35,7 +40,7 @@ Resources:
   GHAKey:
     Type: AWS::IAM::AccessKey
     Properties:
-      Serial: 0
+      Serial: !Ref GHACredentialsSerial
       Status: Active
       UserName: !Ref GHAUser
 

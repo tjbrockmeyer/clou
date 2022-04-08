@@ -46,7 +46,7 @@ else
     if ! aws cloudformation deploy \
         --template-file "$TEMPLATE_FILE" --stack-name "$STACK_NAME" \
         $NOTIFICATIONS \
-        $PARAMETERS \
+        $PARAMETER_OVERRIDES \
         $CAPABILITIES
     then
         echo 'Stack create/update failed:'
@@ -63,5 +63,5 @@ else
 fi
 
 set +e
-rm /tmp/topic-arn
-rm /tmp/stack-status
+rm /tmp/topic-arn 2>/dev/null
+rm /tmp/stack-status 2>/dev/null

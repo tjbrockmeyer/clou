@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# set -x
-
 BASE_PATH='aws/global-resources'
 DATA="$1"
 

@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Apply the secrets used for the github runner user to the repos in the config file, or in the argument list
+# Optionally choose to refresh the secrets before applying them
+
+DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+ACTION="$1"
+if [[ $ACTION != 'apply' ]] && [[ $ACTION != 'refresh' ]]; then
+    echo "usage: $(basename "$0") <action=apply|refresh> [repos...=config/global.json(.github-runner.repos)]" >&2
+    exit 1
+fi
+shift
+REPOS="${@:-$(cat "$DIR/../config/global.json" | jq -r '."github-runner".repos[]' | tr '\n' ' ' | sed 's@\r@@g')}"
+
+if [[ $ACTION = 'refresh' ]]; then
+    CURRENT_SERIAL="$(aws cloudformation describe-stacks --stack-name main-stack --query 'Stacks[0].Parameters[?ParameterKey==`GHACredentialsSerial`].ParameterValue' | jq -r '.[0]')"
+    if [[ $? != 0 ]]; then
+        echo "the main-stack must already be created" >&2
+        exit 1
+    fi
+    NEXT_SERIAL=$(( $CURRENT_SERIAL + 1 ))
+    "$DIR"/../bin/cfn-deploy "$DIR/../templates/main.yml" main-stack "GHACredentialsSerial=$NEXT_SERIAL"
+fi
+
+CREDS="$(aws ssm get-parameter --name=" /github/runner/credentials" --with-decryption --query 'Parameter.Value' | jq -r)"
+for REPO in $REPOS; do
+    echo "$CREDS" | jq -r '.awsAccessKeyId' | gh secret -R "$REPO" set AWS_ACCESS_KEY_ID
+    echo "$CREDS" | jq -r '.awsSecretAccessKey' | gh secret -R "$REPO" set AWS_SECRET_ACCESS_KEY
+done
+
