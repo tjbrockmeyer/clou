@@ -50,4 +50,4 @@ for PID in $PIDS; do
 done
 
 cd "$DIR/.."
-./bin/cfn-deploy templates/custom-resources.yml custom-resources "CodeVersion=v$VERSION"
+./bin/cfn-deploy main/custom-resources.yml custom-resources "CodeVersion=v$VERSION"
