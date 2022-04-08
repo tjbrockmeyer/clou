@@ -26,7 +26,7 @@ fi
 cd "$DIR/../lambda/custom-resource"
 BUCKET=$(aws ssm get-parameter --name ' /global/bucket-name' --output text --query 'Parameter.Value')
 PIDS=
-for PACKAGE in *; do
+for PACKAGE in *; do 
     if [[ -e "$PACKAGE/requirements.txt" ]]; then
         "$PACKAGE_CODE" "$PACKAGE" "$BUCKET" "$PACKAGE/v$VERSION" \
             "mkdir site-packages 2>/dev/null" \
@@ -40,6 +40,7 @@ for PACKAGE in *; do
         echo "update-custom-resources: no valid packaging command for this directory: $PACKAGE"
     fi
 done
+
 for PID in $PIDS; do
     if ! wait $PID; then
         wait
