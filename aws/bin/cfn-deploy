@@ -65,3 +65,4 @@ fi
 set +e
 rm /tmp/topic-arn 2>/dev/null
 rm /tmp/stack-status 2>/dev/null
+exit 0

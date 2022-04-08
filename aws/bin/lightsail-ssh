@@ -2,7 +2,6 @@
 
 set -e
 
-
 INSTANCE="$1"
 
 if [[ -z "$INSTANCE" ]]; then

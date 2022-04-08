@@ -24,7 +24,7 @@ jobs:
           role-to-assume: arn:aws:iam::060868188835:role/infra-github-runner
 
       - name: Upload Changes
-        run: './aws/main/custom-resources'
+        run: sh ./aws/main/custom-resources
 
       # - name: Get Changed Files
       #   id: files

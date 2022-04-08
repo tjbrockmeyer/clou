@@ -50,7 +50,7 @@ const waitWhilePending = async (instanceName) => {
     }
 }
 
-const createInstance = async (instanceName, keyPairName, privateKey, availabilityZone, blueprintId, bundleId) => {
+const createInstance = async (instanceName, keyPairName, privateKey, availabilityZone, blueprintId, bundleId, keyId, secretKey) => {
     await lightsail.createInstances({
         instanceNames: [instanceName],
         availabilityZone,
@@ -69,10 +69,11 @@ const createInstance = async (instanceName, keyPairName, privateKey, availabilit
         return `printf -- '${content}' > bin/${filename} && chmod 744 bin/${filename}`;
     }))).join(' && ');
     await ssh.exec(`\
+aws configure set aws_access_key_id '${keyId}' &&
+aws configure set aws_secret_access_key '${secretKey}' &&
 echo "export LIGHTSAIL_INSTANCE_NAME=${instanceName}" >> .bash_profile &&
 echo "export PATH=\\"\\$PATH:/home/${sshConfig.username}/bin\\"" >> .bash_profile &&
-mkdir bin &&
-${executableFiles}`);
+mkdir bin && ${executableFiles}`);
 }
 
 const deleteInstance = async (instanceName) => {

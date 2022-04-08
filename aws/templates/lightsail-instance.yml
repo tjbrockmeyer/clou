@@ -4,6 +4,10 @@ Parameters:
   Name:
     Type: String
     Description: The name of the lightsail instance
+  AccessKeySerial:
+    Type: Number
+    Description: The name of the lightsail instance
+    Default: 0
 
 Outputs: {}
 
@@ -37,5 +41,32 @@ Resources:
       InstanceName: !Ref Name
       KeyPairName: !Ref InstanceKeyPair
       PrivateKey: !GetAtt InstanceKeyPair.PrivateKey
-      AvailabilityZone: us-east-1a
+      AvailabilityZone: !Sub ${AWS::Region}a
       StaticIpName: !Ref StaticIp
+
+  User: 
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Ref Name
+      Path: '/lightsail/'
+      Policies:
+        - PolicyName: Inline
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement: 
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: '*'
+  AccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      Serial: !Ref AccessKeySerial
+      Status: Active
+      UserName: !Ref User
+  AccessKeyParameter:
+    Type: Custom::SecureStringParameter
+    Properties:
+      ServiceToken: !ImportValue cfn-custom-resource-secure-string-parameter
+      Name: !Sub /lightsail/${Name}/access-key
+      Description: Access key for the linkbot user
+      Value: !Sub '{"awsAccessKeyId":"${AccessKey}","awsSecretAccessKey":"${AccessKey.SecretAccessKey}"}'
