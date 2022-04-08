@@ -8,7 +8,7 @@ on:
       - 'aws/main/custom-resources*'
       - 'aws/lambda/custom-resource/**'
   workflow_dispatch:
-  
+
 jobs:
   UploadChangedResources:
     runs-on: ubuntu-latest
@@ -24,6 +24,11 @@ jobs:
         with:
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::060868188835:role/infra-github-runner
+
+      - name: Check permissions
+        run: |
+          ls -la ./aws/main
+          ls -la ./aws/scripts
 
       - name: Upload Changes
         run: bash ./aws/main/custom-resources
