@@ -1,8 +1,5 @@
-name: Manage Credentials
+name: Manage Global Resources
 on: [push]
-env:
-  AWS_REGION: us-east-1
-
 jobs:
   manage-credentials:
     runs-on: ubuntu-latest
@@ -15,14 +12,14 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Get Changed Files
         id: files
         uses: jitterbit/get-changed-files@v1
 
-      - name: Update Global Resources
-        run: ./aws/scripts/update-global-resources
+      # - name: Update Global Resources
+      #   run: ./aws/scripts/update-global-resources
       
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
