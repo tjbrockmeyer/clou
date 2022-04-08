@@ -40,7 +40,6 @@ for PACKAGE in *; do
         echo "update-custom-resources: no valid packaging command for this directory: $PACKAGE"
     fi
 done
-
 for PID in $PIDS; do
     if ! wait $PID; then
         wait

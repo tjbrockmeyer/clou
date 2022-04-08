@@ -8,7 +8,7 @@ on:
       - 'aws/main/custom-resources*'
       - 'aws/lambda/custom-resource/**'
 jobs:
-  Upload Changed Resources:
+  UploadChangedResources:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
