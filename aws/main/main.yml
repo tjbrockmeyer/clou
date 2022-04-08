@@ -8,6 +8,12 @@ Parameters:
     Type: String
     Default: infra
 
+Outputs:
+  GithubOidcOut:
+    Value: !Ref GithubOidc
+    Export:
+      Name: 'github-oidc'
+
 Resources:
   Bucket:
     Type: AWS::S3::Bucket

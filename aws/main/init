@@ -1,7 +1,9 @@
 #!/bin/bash
 
+set -e
+
 DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$DIR/.."
 
-./bin/cfn-deploy templates/main.yml main-stack
+./bin/cfn-deploy main/main.yml main-stack
 ./main/custom-resources
