@@ -69,8 +69,3 @@ Resources:
               - Effect: Deny
                 Action: 'iam:*'
                 Resource: '*'
-              - Effect: Allow
-                Action: 
-                  - 'iam:CreateAccessKey'
-                  - 'iam:UpdateAccessKey'
-                Resource: '*'
