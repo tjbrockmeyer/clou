@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# I think this isn't necessary, because this should use the ~/.aws/credentials file in the best case.
+
 set -e
 
 ROLE_ARN="$1"

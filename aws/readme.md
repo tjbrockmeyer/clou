@@ -8,7 +8,7 @@ There are cloudformation templates in place for running docker containers on sim
 
 Just before jumping in, note that you can use the convenience script `bin/cfn-deploy.sh` to deploy any templates. 
 It requires two parameters, `TEMPLATE_FILE` and `STACK_NAME`.
-Any parameters after those two should be provided in the `Key=Value` format, because they will be interpreted as parameters.
+Any parameters after those two should be provided in the `Key=Value` format, because they will be interpreted as stack parameters.
 
 Moving on... there is a required order for running these templates.
 
@@ -22,3 +22,7 @@ Next, we will need to run `update-custom-resources.sh` to get our custom resourc
 These include lightsail resources and a secure string resource.
 
 Once the custom resources are created, you are free to begin creating lightsail instances using `templates/lightsail-instance.yml` and deploying your projects to your instances by using `templates/project.yml`.
+
+## global-resources
+
+This is a place for templates that can be ran by github actions. There will be workflows in place for automating the creation of resources here.

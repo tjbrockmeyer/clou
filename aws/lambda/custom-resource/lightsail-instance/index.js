@@ -7,10 +7,20 @@ const fs = require('fs').promises;
 
 const userData = `#!/bin/bash
 sudo yum update -y
+
+# support for docker
 sudo yum install -y jq
 sudo amazon-linux-extras install docker
 sudo service docker start
-sudo usermod -a -G docker ec2-user`
+sudo usermod -a -G docker ec2-user
+
+# support for certbot
+sudo wget -r --no-parent -A 'epel-release-*.rpm' https://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/
+sudo rpm -Uvh dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-*.rpm
+sudo yum-config-manager --enable epel*
+sudo yum repolist all
+sudo amazon-linux-extras install epel -y
+sudo yum install -y certbot`
 
 const getSshConfig = async (instanceName, privateKey) => {
     const {instance} = await lightsail.getInstance({instanceName}).promise();
@@ -53,7 +63,7 @@ const createInstance = async (instanceName, keyPairName, privateKey, availabilit
     await new Promise(r => setTimeout(r, 10000)); // wait for ssh to initialize
     const sshConfig = await getSshConfig(instanceName, privateKey);
     const ssh = new SSH2(sshConfig);
-    const files = ['as-role.sh', 'composer.py'];
+    const files = ['as-role', 'composer.py'];
     const executableFiles = (await Promise.all(files.map(async filename => {
         const content = await fs.readFile(filename, 'utf-8');
         return `printf -- '${content}' > bin/${filename} && chmod 744 bin/${filename}`;

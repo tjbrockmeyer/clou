@@ -6,6 +6,10 @@ import sys
 from datetime import datetime
 
 
+# This is supposed to be a file to perform docker compose with the intent of updating secrets as well.
+# I think this isn't a useful script...
+
+
 role_secret_name = 'role_creds'
 
 

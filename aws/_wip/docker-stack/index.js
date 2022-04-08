@@ -44,7 +44,7 @@ const getStackRole = async (roleName) => {
 
 const writeComposeSettings = async (sshConfig, settings) => {
     const ssh = new SSH2(sshConfig);
-    ssh.
+    // ssh.
 }
 
 const validateProperties = (ResourceProperties) => {
