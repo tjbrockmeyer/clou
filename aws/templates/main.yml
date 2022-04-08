@@ -26,3 +26,25 @@ Resources:
       Name: /global/stack-notifications-topic-arn
       Type: String
       Value: !Ref StackNotificationsTopic
+
+  GHAUser:
+    Type: AWS::IAM::User
+    Properties: 
+      UserName: github-runner
+  
+  GHAKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      Serial: 0
+      Status: Active
+      UserName: !Ref GHAUser
+
+  GHAKeyParameter:
+    Type: Custom::SecureStringParameter
+    Properties:
+      ServiceToken: !ImportValue cfn-custom-resource-secure-string-parameter
+      Name: /github/runner/credentials
+      Description: Credentials for the github runner user
+      Type: SecureString
+      Value: !Sub |
+        {"awsAccessKeyId":"${GHAKey}","awsSecretAccessKey":"${GHAKey.SecretAccessKey}"}
