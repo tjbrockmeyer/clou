@@ -30,6 +30,7 @@ else
     NOTIFICATIONS=""
 fi
 
+EXIT_CODE=0
 if [[ $INTERACTIVE = 'false' ]]; then
     if ! aws cloudformation describe-stacks --stack-name="$STACK_NAME" --output text --query 'Stacks[0].StackStatus' >/tmp/stack-status 2>/dev/null; then
         ACTION=create-stack
@@ -49,6 +50,7 @@ else
         $PARAMETER_OVERRIDES \
         $CAPABILITIES
     then
+        EXIT_CODE=1
         echo 'Stack create/update failed:'
         aws cloudformation describe-stack-events --stack-name "$STACK_NAME" --max-items 30 \
             --output yaml \
@@ -65,4 +67,4 @@ fi
 set +e
 rm /tmp/topic-arn 2>/dev/null
 rm /tmp/stack-status 2>/dev/null
-exit 0
+exit $EXIT_CODE

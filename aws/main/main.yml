@@ -73,5 +73,8 @@ Resources:
                 Action: '*'
                 Resource: '*'
               - Effect: Deny
-                Action: 'iam:*'
+                Action: '*'
+                Resource: '*'
+              - Effect: Allow
+                Action: 'iam:*Role*'
                 Resource: '*'
