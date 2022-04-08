@@ -6,7 +6,7 @@ APP_NAME="$1"
 INSTANCE="$2"
 
 if [[ -z "$APP_NAME" ]] || [[ -z "$INSTANCE" ]]; then
-    echo "usage: lightsail-docker-deploy.sh <app-name> <lightsail-instance-name>"
+    echo "usage: $(basename "$0") <app-name> <lightsail-instance-name>"
     exit 1
 fi
 

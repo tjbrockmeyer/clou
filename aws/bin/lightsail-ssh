@@ -6,7 +6,7 @@ set -e
 INSTANCE="$1"
 
 if [[ -z "$INSTANCE" ]]; then
-    echo "usage: lightsail-ssh.sh <lightsail-instance-name>"
+    echo "usage: $(basename "$0") <lightsail-instance-name>"
     exit 1
 fi
 

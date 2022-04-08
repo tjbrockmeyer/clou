@@ -12,7 +12,7 @@ else
 fi
 
 if [[ -z "$TEMPLATE_FILE" ]] || [[ -z "$STACK_NAME" ]]; then
-    echo "usage: cfn-deploy.sh <template-file> <stack-name> [name=value]..."
+    echo "usage: $(basename "$0") <template-file> <stack-name> [name=value]..."
     exit 1
 fi
 
@@ -38,7 +38,7 @@ then
 fi
 
 STATUS=$(aws cloudformation describe-stacks --stack-name="$STACK_NAME" --output text --query 'Stacks[0].StackStatus')
-if [[ $STATUS == "ROLLBACK_COMPLETE" ]]; then
+if [[ $STATUS = "ROLLBACK_COMPLETE" ]]; then
     aws cloudformation delete-stack --stack-name "$STACK_NAME"
 fi
 

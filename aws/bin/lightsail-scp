@@ -8,7 +8,7 @@ LOCAL_FILE="$2"
 REMOTE_FILE="$3"
 
 if [[ -z "$INSTANCE" ]] || [[ -z "$LOCAL_FILE" ]] || [[ -z "$REMOTE_FILE" ]]; then
-    echo "usage: lightsail-ssh.sh <lightsail-instance-name> <local-file> <remote-file>"
+    echo "usage: $(basename "$0") <lightsail-instance-name> <local-file> <remote-file>"
     exit 1
 fi
 

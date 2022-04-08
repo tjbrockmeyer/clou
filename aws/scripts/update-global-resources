@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# set -x
+
+BASE_PATH='aws/global-resources'
+DATA="$1"
+
+if [[ -z "$DATA" ]]; then
+    echo "usage: $(basename "$0") <data>" > /dev/stderr
+    exit 1
+fi
+
+sanitize() {
+    cat /dev/stdin | sed 's@^'"$BASE_PATH"'/@@' | sed 's@/@-@g' | sed 's@\.[a-zA-Z0-9]\+$@@g'
+}
+
+get_opts() {
+    REGIONS=
+    OPTS="$(grep '#?' < "/dev/stdin")"
+    while read LINE; do
+        if [[ "$LINE" == '#?regions '* ]]; then
+            REGIONS="${LINE:10}"
+        fi
+    done <<< "$OPTS"
+}
+
+revive_contents() {
+    OUTPUT=$(git rev-list HEAD -n 1 -- "$1" | git checkout $(cat '/dev/stdin')^ "$1" 2>&1)
+    if [[ $? != 0 ]]; then
+        echo "$OUTPUT" >&2
+        exit 1
+    fi
+    cat "$1"
+    git rm -f "$1" >/dev/null
+}
+
+UPDATED_FILES="$(echo "$DATA" | jq -r '.added_modified[]' | sed 's@\r@@g')"
+DELETED_FILES="$(echo "$DATA" | jq -r '.removed[]' | sed 's@\r@@g')"
+
+# create/update stacks for created/updated files
+while read FILE; do
+    if [[ "$FILE" == "$BASE_PATH"* ]]; then
+        get_opts < "$FILE"
+        for REGION in $REGIONS; do
+            echo AWS_REGION="$REGION" ./aws/bin/cfn-deploy "$FILE" "$(sanitize <<< "$FILE")"
+        done
+    fi
+done <<< "$UPDATED_FILES"
+
+# delete stacks for deleted files
+while read FILE; do
+    if [[ "$FILE" == "$BASE_PATH"* ]]; then
+        get_opts <<< "$(revive_contents "$FILE")"
+        for REGION in $REGIONS; do
+            echo AWS_REGION="$REGION" aws cloudformation delete-stack --stack-name="$(sanitize <<< "$FILE")"
+        done
+    fi
+done <<< "$DELETED_FILES"
