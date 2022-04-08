@@ -62,5 +62,6 @@ else
 
 fi
 
+set +e
 rm /tmp/topic-arn
 rm /tmp/stack-status
