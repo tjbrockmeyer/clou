@@ -10,7 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  UploadChangedResources:
+  upload:
+    name: Upload Changed Resources
     runs-on: ubuntu-latest
     permissions:
       id-token: write

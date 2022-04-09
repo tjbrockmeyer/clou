@@ -1,11 +1,12 @@
-name: Upload Changed Resources
+name: Rotate Lightsail Credentials
 on:
   schedule:
     - cron: "0 4 * * 1"
   workflow_dispatch:
 
 jobs:
-  UploadChangedResources:
+  rotate:
+    name: Rotate Lightsail Credentials
     runs-on: ubuntu-latest
     permissions:
       id-token: write
