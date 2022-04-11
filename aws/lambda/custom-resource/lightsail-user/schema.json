@@ -1,0 +1,23 @@
+{
+    "type": "object",
+    "required": [
+        "InstanceName",
+        "PrivateKey",
+        "AccessKeyId",
+        "SecretAccessKey"
+    ],
+    "properties": {
+        "InstanceName": {
+            "type": "string"
+        },
+        "PrivateKey": {
+            "type": "string"
+        },
+        "AccessKeyId": {
+            "type": "string"
+        },
+        "SecretAccessKey": {
+            "type": "string"
+        }
+    }
+}

@@ -1,0 +1,111 @@
+{
+    "typeName": "TJB::SSM::SecureString",
+    "description": "A SecureString type of parameter for the AWS SSM Parameter Store.",
+    "sourceUrl": "https://github.com/tjbrockmeyer/infra.git",
+    "tagging": {
+        "taggable": true
+    },
+    "definitions": {},
+    "properties": {
+        "AllowedPattern": {
+            "description": "A regular expression used to validate the parameter value. For example, for String types with values restricted to numbers, you can specify the following: AllowedPattern=^\\d+$",
+            "type": "string",
+            "maxLength": 1024
+        },
+        "DataType": {
+            "description": "The data type of the parameter, such as text or aws:ec2:image. The default is text.",
+            "type": "string",
+            "enum": [
+                "text",
+                "aws:ec2:image"
+            ],
+            "default": "text"
+        },
+        "Description": {
+            "description": "Information about the parameter.",
+            "type": "string",
+            "maxLength": 1024
+        },
+        "Name": {
+            "description": "The name of the parameter.",
+            "type": "string",
+            "pattern": "^(/[a-zA-Z0-9_-]+)+$",
+            "minLength": 1,
+            "maxLength": 1900
+        },
+        "Policies": {
+            "description": "Information about the policies assigned to a parameter",
+            "type": "string"
+        },
+        "Tags": {
+            "description": "Optional metadata that you assign to a resource in the form of an arbitrary set of tags (key-value pairs). Tags enable you to categorize a resource in different ways, such as by purpose, owner, or environment. For example, you might want to tag a Systems Manager parameter to identify the type of resource to which it applies, the environment, or the type of configuration data referenced by the parameter.",
+            "type": "object",
+            "patternProperties": {
+                "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "maxProperties": 1000
+        },
+        "Tier": {
+            "description": "The parameter tier.",
+            "type": "string",
+            "enum": [
+                "Advanced",
+                "Intelligent-Tiering",
+                "Standard"
+            ],
+            "default": "Standard"
+        },
+        "Value": {
+            "description": "The parameter value.",
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "Name",
+        "Value"
+    ],
+    "createOnlyProperties": [
+        "/properties/Name"
+    ],
+    "primaryIdentifier": [
+        "/properties/Name"
+    ],
+    "writeOnlyProperties": [
+        "/properties/Value"
+    ],
+    "handlers": {
+        "create": {
+            "permissions": [
+                "ssm:PutParameter"
+            ]
+        },
+        "read": {
+            "permissions": [
+                "ssm:DescribeParameters",
+                "ssm:ListTagsForResource"
+            ]
+        },
+        "update": {
+            "permissions": [
+                "ssm:PutParameter",
+                "ssm:AddTagsToResource",
+                "ssm:RemoveTagsFromResource"
+            ]
+        },
+        "delete": {
+            "permissions": [
+                "ssm:DeleteParameter"
+            ]
+        },
+        "list": {
+            "permissions": [
+                "ssm:DescribeParameters",
+                "ssm:ListTagsForResource"
+            ]
+        }
+    }
+}

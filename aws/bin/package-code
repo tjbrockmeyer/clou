@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# Packages code according to the arguments passed in.
+# Actively used by update-custom-resources
+
+usage() {
+    printf "\
+usage: $(basename "$0") <-d DIR> <-b S3_BUCKET> <-k S3_KEY> [-n] [-p PREP_CMD] [-i INSTALL_CMD] [-t TEST_CMD]
+    -n   :no-copy (perform all actions in-place)
+" >&2
+}
+exit_bad() {
+    usage
+    exit 1
+}
+
+DIR=
+S3_BUCKET=
+S3_KEY=
+PREP_CMD=
+INSTALL_CMD=
+TEST_CMD=
+NO_COPY=
+while getopts "nd:b:k:p:i:t:" OPT; do
+    case "$OPT" in
+        d)
+            DIR="$OPTARG"
+            ;;
+        b)
+            S3_BUCKET="$OPTARG"
+            ;;
+        k)
+            S3_KEY="$OPTARG"
+            ;;
+        p)
+            PREP_CMD="$OPTARG"
+            ;;
+        i)
+            INSTALL_CMD="$OPTARG"
+            ;;
+        t)
+            TEST_CMD="$OPTARG"
+            ;;
+        n)
+            NO_COPY=1
+            ;;
+        :)
+            echo "Error: -$OPTARG requires an argument" >&2
+            exit_bad
+            ;;
+        *)
+            echo "error: invalid option -$OPTARG" >&2
+            exit_bad
+            ;;
+    esac
+done
+
+if [[ -z "$DIR" ]] || [[ -z "$S3_BUCKET" ]] || [[ -z "$S3_KEY" ]]; then
+    echo "missing at least one required flag"
+    exit_bad
+fi
+
+NAME="$(basename "$DIR")"
+
+if [[ -z $NO_COPY ]]; then
+    mkdir -p "/tmp/$NAME"
+    cp -r "$DIR"/* "/tmp/$NAME/"
+    cd "/tmp/$NAME"
+else 
+    cd "$DIR"
+fi
+
+if [[ -n "$PREP_CMD" ]]; then
+    bash -c "$PREP_CMD"
+fi
+
+if [[ -n "$INSTALL_CMD" ]]; then
+    if ! bash -c "$INSTALL_CMD"; then
+        echo "installation command failed - please fix any issues and try again" >&2
+        exit 1
+    fi
+fi
+
+if [[ -n "$TEST_CMD" ]]; then
+    if ! bash -c "$TEST_CMD"; then
+        echo "some tests failed - please fix any issues and try again" >&2
+        exit 1
+    fi
+fi
+
+if [[ -n "$POST_TEST_CMD" ]]; then
+    bash -c "$POST_TEST_CMD"
+fi
+
+zip -rq "/tmp/$NAME.zip" .
+
+aws s3api put-object --bucket "$S3_BUCKET" --key "code/$S3_KEY.zip" --body "/tmp/$NAME.zip" >/dev/null
+
+rm -rf "/tmp/$NAME"
+rm -rf "/tmp/$NAME.zip"
+
+printf -- "code packaging finished for $NAME\n"

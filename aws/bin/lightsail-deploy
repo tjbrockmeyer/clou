@@ -6,7 +6,10 @@ USAGE="\
 usage: $(basename "$0") <lightsail-instance-name> [arg]...
     args are some of: { rotate-access-key }"
 
-DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/.."
+cd "$DIR"
+
+CFN_DEPLOY="$DIR/bin/cfn-deploy"
 
 INSTANCE="$1"
 STACK="lightsail-$INSTANCE"
@@ -41,12 +44,12 @@ else
 fi
 
 # deploy the cloudformation template
-"$DIR"/../bin/cfn-deploy "$DIR/../templates/lightsail-instance.yml" "$STACK" "Name=$INSTANCE" "AccessKeySerial=$NEXT_SERIAL"
+"$CFN_DEPLOY" "$DIR/templates/lightsail-instance.yml" "$STACK" "Name=$INSTANCE" "AccessKeySerial=$NEXT_SERIAL"
 
-# Rotate the secret on the machine if it was rotated in cloudformation
-if [[ -n "$ROTATE" ]]; then
-    KEY="$(aws ssm get-parameter --name=" /lightsail/$INSTANCE/access-key" --with-decryption --output text --query 'Parameter.Value' | jq -r | sed 's@\r@@g')"
-    "$DIR"/../bin/lightsail-ssh "$INSTANCE" "\
-aws configure set aws_access_key_id '$(jq -r '.awsAccessKeyId' <<< "$KEY")' --profile main &&
-aws configure set aws_secret_access_key '$(jq -r '.awsSecretAccessKey' <<< "$KEY")' --profile main"
-fi
+# # Rotate the secret on the machine if it was rotated in cloudformation
+# if [[ -n "$ROTATE" ]]; then
+#     KEY="$(aws ssm get-parameter --name=" /lightsail/$INSTANCE/access-key" --with-decryption --output text --query 'Parameter.Value' | jq -r | sed 's@\r@@g')"
+#     "$DIR"/bin/lightsail-ssh "$INSTANCE" "\
+# aws configure set aws_access_key_id '$(jq -r '.awsAccessKeyId' <<< "$KEY")' --profile main &&
+# aws configure set aws_secret_access_key '$(jq -r '.awsSecretAccessKey' <<< "$KEY")' --profile main"
+# fi

@@ -3,14 +3,16 @@
 # Uploads the lambda function for all custom resources in the lambda/custom-resource directory
 # Then deploys the cloud formation template that is pointing to those uploads.
 
-DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-PACKAGE_CODE="$DIR/../scripts/package-code"
+DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/.."
+cd "$DIR"
+
+PACKAGE_CODE="$DIR/bin/package-code"
+CFN_DEPLOY="$DIR/bin/cfn-deploy"
 
 # ====
 # This is code to upload all of the templates in the templates folder to S3
 # But right now, that's not really useful, so it's commented...
 # ====
-# cd "$DIR/.."
 # BUCKET=$(aws ssm get-parameter --name ' /global/bucket-name' --output text --query 'Parameter.Value')
 # for FILE in templates/*.yml; do
 #     aws s3api put-object --bucket "$BUCKET" --key "$FILE" --body "$FILE" >/dev/null && printf -- "finished uploading $FILE\n" &
@@ -23,22 +25,27 @@ else
     VERSION=0
 fi
 
-cd "$DIR/../lambda"
+cd "$DIR/lambda"
 BUCKET=$(aws ssm get-parameter --name ' /global/bucket-name' --output text --query 'Parameter.Value')
 PIDS=
 for PACKAGE in custom-resource/*; do 
+    PREP=
+    BUILD=
+    NO_COPY=
     if [[ -e "$PACKAGE/requirements.txt" ]]; then
-        "$PACKAGE_CODE" "$PACKAGE" "$BUCKET" "$PACKAGE/v$VERSION" \
-            "mkdir site-packages 2>/dev/null" \
-            "python -m pip install -q -r requirements.txt --target site-packages" &
-        PIDS+=" $!"
+        PREP='mkdir site-packages 2>/dev/null'
+        BUILD='python -m pip install -q -r requirements.txt --target site-packages 2>/dev/null'
+    elif [[ -e "$PACKAGE/tsconfig.json" ]]; then
+        BUILD='npm ci --silent && npm run build && npm prune --production'
+        NO_COPY='-n'
     elif [[ -e "$PACKAGE/package.json" ]]; then
-        "$PACKAGE_CODE" "$PACKAGE" "$BUCKET" "$PACKAGE/v$VERSION" \
-            "" "NODE_ENV=production npm ci --silent" &
-        PIDS+=" $!"
-    else 
+        BUILD='NODE_ENV=production npm ci --silent'
+    else
         echo "$(basename "$0"): no valid packaging command for this directory: $PACKAGE"
+        continue
     fi
+    "$PACKAGE_CODE" $NO_COPY -d "$PACKAGE" -b "$BUCKET" -k "$PACKAGE/v$VERSION" -p "$PREP" -i "$BUILD" &
+    PIDS+=" $!"
 done
 
 for PID in $PIDS; do
@@ -49,5 +56,4 @@ for PID in $PIDS; do
     fi
 done
 
-cd "$DIR/.."
-./bin/cfn-deploy main/custom-resources.yml custom-resources "CodeVersion=v$VERSION"
+"$CFN_DEPLOY" "$DIR/templates/custom-resources.yml" custom-resources "CodeVersion=v$VERSION"

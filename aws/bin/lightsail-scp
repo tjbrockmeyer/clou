@@ -2,7 +2,6 @@
 
 set -e
 
-
 INSTANCE="$1"
 LOCAL_FILE="$2"
 REMOTE_FILE="$3"
