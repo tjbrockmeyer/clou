@@ -1,0 +1,23 @@
+{
+    "type": "object",
+    "required": [
+        "InstanceName",
+        "PrivateKey",
+        "RoleArn",
+        "ProfileName"
+    ],
+    "properties": {
+        "InstanceName": {
+            "type": "string"
+        },
+        "PrivateKey": {
+            "type": "string"
+        },
+        "RoleArn": {
+            "type": "string"
+        },
+        "ProfileName": {
+            "type": "string"
+        }
+    }
+}

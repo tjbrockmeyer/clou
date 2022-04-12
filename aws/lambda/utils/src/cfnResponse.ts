@@ -47,7 +47,7 @@ export enum ResponseStatus {
 
 export const success = <T>(data?: T): Response<T> => ({ status: ResponseStatus.SUCCESS, data });
 
-export const failure = <T>(reason: string): Response<T> => ({ status: ResponseStatus.FAILED, reason });
+export const failed = <T>(reason: string): Response<T> => ({ status: ResponseStatus.FAILED, reason });
 
 export const createSender = <T>(baseRes: BaseResponse) => {
     return async (res: Response<T>) => send({ ...baseRes, ...res });

@@ -1,0 +1,6 @@
+
+PolicyStatements:
+  - Effect: Allow
+    Action:
+      - lightsail:GetInstance
+    Resource: !Sub arn:aws:lightsail:*:${AWS::AccountId}:*

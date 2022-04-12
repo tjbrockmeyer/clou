@@ -36,6 +36,10 @@ Outputs:
     Value: !GetAtt LightsailUserCustomResource.Arn
     Export:
       Name: cfn-custom-resource-lightsail-user
+  LightsailDockerRoleFunctionArn:
+    Value: !GetAtt LightsailDockerRoleCustomResource.Arn
+    Export:
+      Name: cfn-custom-resource-lightsail-docker-role
   # DockerSwarmFunctionArn:
   #   Value: !GetAtt DockerSwarmCustomResource.Arn
   #   Export:
@@ -137,6 +141,23 @@ Resources:
       CodeUri:
         Bucket: !Ref BucketName
         Key: !Sub code/custom-resource/lightsail-user/${CodeVersion}.zip
+      Policies: 
+        - Statement:
+          - Effect: Allow
+            Action:
+              - lightsail:GetInstance
+            Resource: !Sub arn:aws:lightsail:*:${AWS::AccountId}:*
+
+  LightsailDockerRoleCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: cfn-custom-resource-lightsail-docker-role
+      Handler: dist/index.handler
+      Runtime: nodejs14.x
+      Timeout: 600
+      CodeUri:
+        Bucket: !Ref BucketName
+        Key: !Sub code/custom-resource/lightsail-docker-role/${CodeVersion}.zip
       Policies: 
         - Statement:
           - Effect: Allow

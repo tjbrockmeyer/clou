@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  BucketName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /global/bucket-name
+  Name: 
+    Type: String
+  CodeVersion:
+    Type: String
+
+Globals:
+  Function:
+    Environment:
+      Variables:
+        PYTHONPATH: "/var/task/site-packages:/var/runtime"
+
+Outputs:
+  FunctionArn:
+    Value: !GetAtt Function.Arn
+    Export:
+      Name: !Sub cfn-custom-resource-${Name}
+
+Resources:
+
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub cfn-custom-resource-${Name}
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Timeout: 600
+      CodeUri:
+        Bucket: !Ref BucketName
+        Key: !Sub code/custom-resource/${Name}/${CodeVersion}.zip
+      Policies:
+        - Statement: []
