@@ -34,6 +34,7 @@ jobs:
           for PACKAGE in *; do
             if [[ -e "$PACKAGE/infra.yml" ]] && [[ "$(yq '.Template' < "$PACKAGE/infra.yml")" = custom-resource ]]; then
               PACKAGES+=" $PACKAGE"
+            fi
           done
           CHANGES=
           for PACKAGE in $PACKAGES; do
