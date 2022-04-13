@@ -41,7 +41,7 @@ export const handler = cfnLambda<Props, Data>({
     schema,
     resourceExists: async (props) => {
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey);
-        return ssh !== undefined && await ssh.exec(`aws configure get aws_access_key_id --profile main`) !== '';
+        return ssh !== undefined && (await safeExec(ssh, `aws configure get aws_access_key_id --profile main`)).trim() !== '';
     },
     onCreate: async (props) => {
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH2;
@@ -61,6 +61,7 @@ export const handler = cfnLambda<Props, Data>({
     },
     onDelete: async (props) => {
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH2;
+        await deleteCreds(ssh);
         return success();
     },
 })
