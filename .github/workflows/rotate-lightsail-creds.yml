@@ -9,6 +9,7 @@ jobs:
     name: Get Lightsail Instance Files
     runs-on: ubuntu-latest
     outputs:
+      hasFiles: ${{ steps.updateFiles.outputs.hasFiles }}
       fileNames: ${{ steps.updateFiles.outputs.fileNames  }}
     steps:
       - uses: frenck/action-setup-yq@v1
@@ -28,6 +29,7 @@ jobs:
           done
           LIST="[$(cut -c2- <<< "$LIST")]"
           echo "$LIST"
+          echo "::set-output name=hasFiles::$([[ "$LIST" = '[]' ]] && echo false || echo true)"
           echo "::set-output name=fileNames::$(echo "$LIST")"
       - uses: EndBug/add-and-commit@v9.0.0
         with:
@@ -37,6 +39,7 @@ jobs:
           push: true
 
   deployChanges:
+    if: ${{ fromJSON(needs.updateFiles.outputs.hasFiles) }}
     name: Rotate Credentials
     runs-on: ubuntu-latest
     needs:
