@@ -5,7 +5,7 @@ on:
       - master
       - main
     paths:
-      - 'aws/custom-resources/*'
+      - 'aws/custom-resources/**'
   workflow_dispatch:
 env: 
   BASE_PATH: aws/custom-resources
