@@ -14,7 +14,7 @@ sanitize() {
 
 get_opts() {
     REGIONS=
-    OPTS="$(grep '#?' < "/dev/stdin")"
+    OPTS="$(yq '.Regions' < "/dev/stdin")"
     while read LINE; do
         if [[ "$LINE" == '#?regions '* ]]; then
             REGIONS="${LINE:10}"
@@ -34,6 +34,8 @@ revive_contents() {
 
 UPDATED_FILES="$(echo "$DATA" | jq -r '.added_modified[]' | sed 's@\r@@g')"
 DELETED_FILES="$(echo "$DATA" | jq -r '.removed[]' | sed 's@\r@@g')"
+
+ALL_PACKAGES=""
 
 # create/update stacks for created/updated files
 while read FILE; do
