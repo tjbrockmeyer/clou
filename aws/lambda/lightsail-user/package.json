@@ -9,10 +9,12 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "my-utils": "file:../utils"
+    "my-utils": "file:../utils",
+    "ssh2-promise": "^1.0.2"
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
+    "@types/ssh2": "^0.5.52",
     "aws-sdk": "^2.1111.0",
     "typescript": "^4.6.3"
   },

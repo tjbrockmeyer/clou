@@ -8,7 +8,7 @@ BuildOverride: rm -rf .aws-sam && npm run prepack
 Parameters:
   Name: lightsail-user
   Runtime: nodejs14.x
-  Handler: dist/index.js
+  Handler: dist/index.handler
   
 Substitution:
   PolicyStatements:

@@ -18,7 +18,7 @@ Resources:
     Properties:
       InstanceName: !Ref Name
       KeyPairName: !Ref InstanceKeyPair
-      AvailabilityZone: !Sub ${AWS::Region}
+      AvailabilityZone: !Sub ${AWS::Region}a
       BlueprintId: amazon_linux_2
       BundleId: nano_2_0
       UserData: |
