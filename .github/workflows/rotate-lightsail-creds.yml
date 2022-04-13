@@ -1,41 +1,58 @@
 name: Rotate Lightsail Credentials
 on:
-  # schedule:
-  #   - cron: "0 4 * * 1"
+  schedule:
+    - cron: "0 4 * * 1"
   workflow_dispatch:
 
 jobs:
-  rotate:
-    name: Rotate Lightsail Credentials
+  updateFiles:
+    name: Get Lightsail Instance Files
+    outputs:
+      fileNames: ${{ steps.updateFiles.outputs.fileNames  }}
+    steps:
+      - uses: frenck/action-setup-yq@v1
+      - uses: actions/checkout@v3
+      - id: updateFiles
+        name: Get and Update Files
+        run: |
+          cd aws/resources
+          LIST=
+          for FILE in *; do
+          if [[ "$(yq '.Template' < "$FILE")" = lightsail-instance ]]; then
+              LIST+=",\"$FILE\""
+              SERIAL="$(yq '.Parameters.AccessKeySerial' < "$FILE")"
+              NEXT_SERIAL="$(( "$SERIAL" + 1 ))"
+              yq -i ".Parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
+          fi
+          done
+          LIST="[$(echo "$LIST" | cut -c2-)]"
+          echo "::set-output name=fileNames::$LIST"
+      - uses: EndBug/add-and-commit@v9.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          author_name: github_actions[bot]
+          message: 'rotate credentials for lightsail instances'
+          push: true
+
+  deployChanges:
+    name: Rotate Credentials
     runs-on: ubuntu-latest
+    needs:
+      - updateFiles
+    strategy:
+      matrix:
+        fileName: ${{ fromJSON(needs.getFiles.outputs.fileNames) }}
     permissions:
       id-token: write
       contents: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - uses: frenck/action-setup-yq@v1
+      - uses: actions/checkout@v3
+      - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::060868188835:role/infra-github-runner
-
-      - name: Rotate Secrets
+      - name: Rotate Access Key for ${{ matrix.fileName }}
         run: |
-          PIDS=
-          while read STACK; do
-              LEN="$(aws cloudformation describe-stack-resources --stack-name "$STACK" --query 'length(StackResources[?ResourceType==`Custom::LightsailInstance`])')"
-              if [[ $LEN != 0 ]]; then 
-                  NAME="$(aws cloudformation describe-stacks --stack-name "$STACK" --query 'Stacks[0].Parameters[?ParameterKey==`Name`].ParameterValue' | jq -r '.[]' | sed 's@\r@@g')"
-                  ./aws/bin/lightsail-deploy "$NAME" rotate-access-key &
-                  PIDS+=" $!"
-              fi
-          done <<< "$(aws cloudformation describe-stacks --query 'Stacks[?starts_with(StackName,`lightsail-`)].StackName' | jq -r '.[]' | sed 's@\r@@g')"
-          for PID in $PIDS; do
-              if ! wait $PID; then
-                  wait
-                  echo "at least one instance failed the redeploy - aborting..." >&2
-                  exit 1
-              fi
-          done
+          cd aws/resources
+          FILE="${{ matrix.fileName }}"
