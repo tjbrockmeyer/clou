@@ -39,7 +39,7 @@ jobs:
           push: true
 
   deployChanges:
-    if: ${{ fromJSON(needs.updateFiles.outputs.hasFiles) }}
+    if: ${{ needs.updateFiles.outputs.hasFiles == 'true' }}
     name: Rotate Credentials
     runs-on: ubuntu-latest
     needs:
