@@ -20,9 +20,9 @@ jobs:
     steps:
       - uses: frenck/action-setup-yq@v1
       - uses: actions/checkout@v3
-      - uses: tj-actions/changed-files@v12.2
+      - uses: tj-actions/changed-files@v18.7
         id: changedFiles
-      - uses: tj-actions/changed-files@v12.2
+      - uses: tj-actions/changed-files@v18.7
         id: infraYmls
         with:
           files: '${{ env.BASE_PATH }}/**/infra.yml'
