@@ -1,7 +1,5 @@
-import aws from 'aws-sdk'
 import { readFileSync } from 'fs';
-import { cfnLambda, success, getLightsailConnection } from 'my-utils';
-import SSH2 from 'ssh2-promise';
+import { customResource, success, getLightsailConnection, SSH } from 'my-utils';
 
 const schema = JSON.parse(readFileSync('schema.json', 'utf-8'));
 
@@ -21,9 +19,7 @@ interface Creds {
     Expiration: string;
 }
 
-const lightsail = new aws.Lightsail();
-
-const assumeRole = async (ssh: SSH2, roleArn: string, instanceName: string): Promise<Creds> => {
+const assumeRole = async (ssh: SSH, roleArn: string, instanceName: string): Promise<Creds> => {
     try {
         return JSON.parse(await ssh.exec(`aws sts assume-role --role-arn=${roleArn} --role-session-name=Lightsail${instanceName}DockerTask --profile=main`)).Credentials;
     } catch (error) {
@@ -32,38 +28,50 @@ const assumeRole = async (ssh: SSH2, roleArn: string, instanceName: string): Pro
     }
 }
 
-const putCredentials = async (ssh: SSH2, instanceName: string, roleArn: string, profileName: string) => {
+const putCredentials = async (ssh: SSH, instanceName: string, roleArn: string, profileName: string) => {
     await ssh.exec(`
 aws configure set role_arn ${roleArn} --profile=${profileName} &&
 aws configure set source_profile main --profile=${profileName} &&
 aws configure set role_session_name Instance${instanceName}DockerTask --profile=${profileName}`);
 }
 
-const deleteCredentials = async (ssh: SSH2, profileName: string) => {
+const deleteCredentials = async (ssh: SSH, profileName: string) => {
     await ssh.exec(`\
 aws configure set role_arn '' --profile=${profileName} &&
 aws configure set source_profile '' --profile=${profileName} &&
 aws configure set role_session_name '' --profile=${profileName}`);
 }
 
-export const handler = cfnLambda<Props, Data>({
+export const handler = customResource<Props, Data>({
     schema,
     resourceExists: async (props) => {
+        const errText = `config profile (${props.ProfileName}) could not be found`;
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey);
-        return ssh !== undefined && ssh.exec(`aws configure get role_arn --profile=${props.ProfileName}`)
+        if(!ssh) {
+            return false;
+        }
+        try {
+            const output = await ssh.exec(`aws configure get role_arn --profile=${props.ProfileName} &>/dev/stdout | cat /dev/stdin`);
+            return !output.includes(errText) && output.trim() !== '';
+        } catch(error) {
+            if(error instanceof Error && error.message.includes(errText)) {
+                return false;
+            }
+            throw error;
+        }
     },
     onCreate: async (props) => {
-        const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH2;
+        const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH;
         await assumeRole(ssh, props.RoleArn, props.InstanceName);
         await putCredentials(ssh, props.InstanceName, props.RoleArn, props.ProfileName);
         return success();
     },
     onUpdate: async (props, before) => {
-        const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH2;
+        const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH;
         await assumeRole(ssh, props.RoleArn, props.InstanceName);
 
         if(props.InstanceName !== before.InstanceName) {
-            const beforeSsh = await getLightsailConnection(before.InstanceName, before.PrivateKey) as SSH2;
+            const beforeSsh = await getLightsailConnection(before.InstanceName, before.PrivateKey) as SSH;
             if(beforeSsh) {
                 await deleteCredentials(beforeSsh, before.ProfileName);
             }
@@ -74,7 +82,7 @@ export const handler = cfnLambda<Props, Data>({
         return success();
     },
     onDelete: async (props) => {
-        const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH2;
+        const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH;
         await deleteCredentials(ssh, props.ProfileName);
         return success();
     },

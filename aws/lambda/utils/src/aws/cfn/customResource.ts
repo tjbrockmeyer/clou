@@ -1,9 +1,10 @@
 import { CloudFormationCustomResourceEvent, Context } from "aws-lambda";
-import { Schema } from "jsonschema";
-import { createSender, Response, failed, success } from "./cfnResponse";
-import { isValid, validate } from "./validateSchema";
+import { createSender, Response, failed, success } from "./response";
+import { Validator, Schema } from "../../helper";
 
 type PromiseOr<T> = T | Promise<T>
+
+type CfnCustomResource = (event: CloudFormationCustomResourceEvent, context: Context) => Promise<void>;
 
 interface Options<TProps, TData> {
     schema: Schema;
@@ -15,13 +16,13 @@ interface Options<TProps, TData> {
     onDelete: (props: TProps) => PromiseOr<Response<TData>>;
 }
 
-export const cfnLambda = <TProps, TData>(opts: Options<TProps, TData>) =>
-    async (event: CloudFormationCustomResourceEvent, context: Context): Promise<void> => {
-        const schema = opts.schema as Schema;
+export const customResource = <TProps, TData>(opts: Options<TProps, TData>): CfnCustomResource => {
+    const validator = new Validator<TProps>(opts.schema);
+    return async (event: CloudFormationCustomResourceEvent, context: Context): Promise<void> => {
         const props = event.ResourceProperties;
-        const physicalResourceId = event.RequestType === 'Create' && isValid<TProps>(props, schema) && opts.getPhysicalId ? await opts.getPhysicalId(props) : undefined;
+        const physicalResourceId = event.RequestType === 'Create' && validator.isValid(props) && opts.getPhysicalId ? await opts.getPhysicalId(props) : undefined;
         const send = createSender({ event, context, physicalResourceId });
-        const validationResult = validate(props, schema);
+        const validationResult = validator.getResult(props);
         if (event.RequestType !== 'Delete' && !validationResult.valid) {
             return send(failed(`the resource properties were invalid: ${validationResult.toString()}`));
         }
@@ -51,3 +52,4 @@ export const cfnLambda = <TProps, TData>(opts: Options<TProps, TData>) =>
             return send(failed(`function crashed with ${message}`));
         }
     };
+};
