@@ -28,7 +28,7 @@ jobs:
           done
           LIST="[$(echo "$LIST" | cut -c2-)]"
           echo "$LIST"
-          echo "::set-output name=fileNames::$LIST"
+          echo "::set-output name=fileNames::$(echo "$LIST")"
       - uses: EndBug/add-and-commit@v9.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
