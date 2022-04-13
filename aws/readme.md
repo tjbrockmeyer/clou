@@ -5,16 +5,28 @@ There are cloudformation templates in place for running docker containers on sim
 
 ## Dependencies
 
-You'll need `jq`, the GitHub CLI and the AWS CLI.
+You'll need `jq`, `yq`, the GitHub CLI and the AWS CLI.
 
 ## Getting Started
 
-Just before jumping in, note that you can use the convenience script `bin/cfn-deploy` to deploy any templates. 
-It requires two parameters, `TEMPLATE_FILE` and `STACK_NAME`.
-Any parameters after those two should be provided in the `Key=Value` format, because they will be interpreted as stack parameters.
+Create main stack along with all custom resources:
+```
+cd resources
+../bin/infra
 
-Create a `config/preferences.json` file if you don't have one, and you'll need to fill in the following:
-  * Create `github-runner.repos` as a list of `OWNER/REPO` strings that you'd like to use github actions with.
-    * They will be automatically given the secrets created for your github runner, and the secret will be easily refreshable.
+cd ../lambda
+for DIR in *; do
+  cd $DIR
+  ../../bin/infra &
+  cd ..
+done
+```
 
-Start by running `main/init`. This will create all the resources you need up-front.
+Add community resource to our registry (must be done in every account and region that needs it):
+```
+aws cloudformation register-type \
+  --region us-east-1 \
+  --type-name "Community::CloudFormation::Delay" \
+  --schema-handler-package "s3://community-resource-provider-catalog/community-cloudformation-delay-0.1.0.zip" \
+  --type RESOURCE
+```

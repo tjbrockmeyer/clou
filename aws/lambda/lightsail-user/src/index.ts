@@ -15,7 +15,7 @@ interface Data {}
 
 const safeExec = async (ssh: SSH2, cmd: string): Promise<string> => {
     try {
-        return ssh.exec(cmd);
+        return await ssh.exec(cmd);
     } catch(error) {
         if(error instanceof Buffer) {
             throw new Error(`command \`${cmd}\` encountered an error: \n${error.toString('utf-8')}`)
@@ -41,7 +41,18 @@ export const handler = cfnLambda<Props, Data>({
     schema,
     resourceExists: async (props) => {
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey);
-        return ssh !== undefined && (await safeExec(ssh, `aws configure get aws_access_key_id --profile main`)).trim() !== '';
+        if(!ssh) {
+            return false;
+        }
+        try {
+            const output = await safeExec(ssh, `aws configure get aws_access_key_id --profile main &>/dev/stdout | cat /dev/stdin`)
+            return !output.includes('config profile (main) could not be found') && output.trim() !== '';
+        } catch(error) {
+            if(error instanceof Error && error.message.includes('config profile (main) could not be found')) {
+                return false;
+            }
+            throw error;
+        };
     },
     onCreate: async (props) => {
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH2;

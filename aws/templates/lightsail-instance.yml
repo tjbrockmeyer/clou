@@ -84,7 +84,14 @@ Resources:
       Name: !Sub /lightsail/${Name}/access-key
       Description: Access key for the linkbot user
       Value: !Sub '{"awsAccessKeyId":"${AccessKey}","awsSecretAccessKey":"${AccessKey.SecretAccessKey}"}'
+
+  # Delay:
+  #   DependsOn: StaticIp
+  #   Type: Community::CloudFormation::Delay
+  #   Properties:
+  #     Duration: PT30S
   InstanceUser:
+    DependsOn: StaticIp
     Type: Custom::LightsailUser
     Properties:
       ServiceToken: !ImportValue cfn-custom-resource-lightsail-user
