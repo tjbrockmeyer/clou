@@ -48,6 +48,7 @@ jobs:
             done
           done
           CHANGES="[$(cut -c2- <<< "$CHANGES")]"
+          echo "$CHANGES"
           echo "::set-output name=hasPackages::$([[ "$CHANGES" = '[]' ]] && echo false || echo true)"
           echo "::set-output name=packages::$(echo "$CHANGES")"
       - name: Find Deleted Packages
@@ -64,6 +65,7 @@ jobs:
             done
           done
           DELETIONS="[$(cut -c2- <<< "$DELETIONS")]"
+          echo "$DELETIONS"
           echo "::set-output name=hasPackages::$([[ "$DELETIONS" = '[]' ]] && echo false || echo true)"
           echo "::set-output name=packages::$(echo "$DELETIONS")"
 
