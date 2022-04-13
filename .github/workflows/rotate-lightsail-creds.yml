@@ -26,7 +26,7 @@ jobs:
               yq -i ".Parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
           fi
           done
-          LIST="[$(echo "$LIST" | cut -c2-)]"
+          LIST="[$(cut -c2- <<< "$LIST")]"
           echo "$LIST"
           echo "::set-output name=fileNames::$(echo "$LIST")"
       - uses: EndBug/add-and-commit@v9.0.0
@@ -43,7 +43,7 @@ jobs:
       - updateFiles
     strategy:
       matrix:
-        fileName: ${{ fromJSON(needs.getFiles.outputs.fileNames) }}
+        fileName: ${{ fromJSON(needs.updateFiles.outputs.fileNames) }}
     permissions:
       id-token: write
       contents: read
@@ -57,4 +57,4 @@ jobs:
       - name: Rotate Access Key for ${{ matrix.fileName }}
         run: |
           cd aws/resources
-          FILE="${{ matrix.fileName }}"
+          ../bin/infra -c "${{ matrix.fileName }}"
