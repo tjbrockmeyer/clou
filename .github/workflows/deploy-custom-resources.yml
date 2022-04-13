@@ -85,7 +85,7 @@ jobs:
           role-to-assume: arn:aws:iam::060868188835:role/infra-github-runner
       - name: Deploy Infrastructure
         run: |
-          ./aws/bin/infra -c "${{ BASE_PATH }}/${{ matrix.package }}/infra.yml"
+          ./aws/bin/infra -c "${{ env.BASE_PATH }}/${{ matrix.package }}/infra.yml"
   
   deleteInfra:
     name: Delete Infrastructure
@@ -130,7 +130,7 @@ jobs:
               | sed 's@;;@\n@g' \
               | column -s '||' -dN "Type,Id,Status,Reason" -W "Reason" -t
           }
-          cd "${{ BASE_PATH }}/${{ matrix.package }}"
+          cd "${{ env.BASE_PATH }}/${{ matrix.package }}"
           STACK_NAME="$(yq '(.Template + "-" + .AppName)' <<< "$(revive_contents infra.yml)")"
           aws cloudformation delete-stack --stack-name="$STACK_NAME"
           while 
