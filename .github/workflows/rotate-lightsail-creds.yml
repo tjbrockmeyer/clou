@@ -17,6 +17,7 @@ jobs:
         name: Get and Update Files
         run: |
           cd aws/resources
+          ls
           LIST=
           for FILE in *; do
           if [[ "$(yq '.Template' < "$FILE")" = lightsail-instance ]]; then
