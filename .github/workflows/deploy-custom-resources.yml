@@ -22,13 +22,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: tj-actions/changed-files@v12.2
         id: changedFiles
-        with:
-          path: ${{ env.BASE_PATH }}
       - uses: tj-actions/changed-files@v12.2
         id: infraYmls
         with:
-          path: ${{ env.BASE_PATH }}
-          files: '**/infra.yml'
+          files: '${{ env.BASE_PATH }}/**/infra.yml'
       - name: Find Added/Changed Packages
         id: getChangedPackages
         run: |
