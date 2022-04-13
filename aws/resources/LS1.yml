@@ -3,7 +3,6 @@ Template: lightsail-instance
 AppName: LS1
 Regions:
   - us-east-1
-
-Parameters: 
+Parameters:
   Name: LS1
-  AccessKeySerial: 1
+  AccessKeySerial: 2
