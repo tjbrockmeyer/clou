@@ -1,0 +1,18 @@
+Version: master
+Template: custom-resource
+AppName: secure-string-parameter
+Regions:
+  - us-east-1
+Parameters:
+  Name: secure-string-parameter
+  Runtime: python3.9
+  Handler: lambda_function.handler
+  
+Substitution:
+  PolicyStatements:
+    - Effect: Allow
+      Action:
+        - ssm:PutParameter
+        - ssm:DeleteParameter
+      Resource: 
+        Fn::Sub: arn:aws:ssm:*:${AWS::AccountId}:parameter/*

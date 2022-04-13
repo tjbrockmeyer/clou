@@ -1,0 +1,19 @@
+Version: master
+Template: custom-resource
+AppName: lightsail-docker-role
+Regions:
+  - us-east-1
+BuildOverride: rm -rf .aws-sam && npm run prepack
+
+Parameters:
+  Name: lightsail-docker-role
+  Runtime: nodejs14.x
+  Handler: dist/index.js
+  
+Substitution:
+  PolicyStatements:
+    - Effect: Allow
+      Action:
+        - lightsail:GetInstance
+      Resource: 
+        Fn::Sub: arn:aws:lightsail:*:${AWS::AccountId}:*

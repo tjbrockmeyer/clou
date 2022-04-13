@@ -5,3 +5,5 @@ __pycache__/
 node_modules
 **/config/preferences.json
 **/dist/
+**/.aws-sam/
+**/tsconfig.tsbuildinfo

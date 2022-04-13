@@ -1,12 +1,12 @@
 name: Upload Changed Resources
 on:
-  push:
-    branches:
-      - master
-      - main
-    paths:
-      - 'aws/main/custom-resources*'
-      - 'aws/lambda/custom-resource/**'
+  # push:
+  #   branches:
+  #     - master
+  #     - main
+  #   paths:
+  #     - 'aws/main/custom-resources*'
+  #     - 'aws/lambda/custom-resource/**'
   workflow_dispatch:
 
 jobs:

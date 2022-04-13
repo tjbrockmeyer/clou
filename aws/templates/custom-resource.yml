@@ -1,21 +1,23 @@
 AWSTemplateFormatVersion: 2010-09-09
-
 Transform: AWS::Serverless-2016-10-31
 
+Metadata:
+  Substitution:
+    PolicyStatements: '.Resources.Function.Properties.Policies[0].Statement'
+
 Parameters:
-  BucketName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /global/bucket-name
   Name: 
     Type: String
-  CodeVersion:
+  Runtime:
+    Type: String
+  Handler:
     Type: String
 
 Globals:
   Function:
     Environment:
       Variables:
-        PYTHONPATH: "/var/task/site-packages:/var/runtime"
+        PYTHONPATH: "/var/task:/var/task/site-packages:/var/runtime"
 
 Outputs:
   FunctionArn:
@@ -29,11 +31,10 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub cfn-custom-resource-${Name}
-      Handler: index.handler
-      Runtime: nodejs14.x
+      Handler: !Ref Handler
+      Runtime: !Ref Runtime
       Timeout: 600
-      CodeUri:
-        Bucket: !Ref BucketName
-        Key: !Sub code/custom-resource/${Name}/${CodeVersion}.zip
+      PackageType: Zip
+      CodeUri: './'
       Policies:
         - Statement: []

@@ -1,0 +1,186 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Metadata:
+  Substitution:
+    GithubRunnerPolicies: '.Resources.GHARole.Properties.Policies[0].PolicyDocument.Statement'
+    AppRolePolicies: '.Resources.Role.Properties.Policies[0].PolicyDocument.Statement'
+
+Parameters:
+  AppName:
+    Type: String
+  Env:
+    Type: String
+    AllowedValues:
+      - infra
+      - np
+      - prod
+  Repo:
+    Type: String
+  LightsailInstance:
+    Type: String
+  LightsailKeyParameter:
+    Type: AWS::SSM::Parameter::Value<String>
+  ConfigSchema:
+    Type: String
+
+Conditions:
+  IsInfra: !Equals 
+    - !Ref Env
+    - infra
+  IsEnv: !Not
+    - !Equals 
+      - !Ref Env
+      - infra
+
+Outputs:
+  ConfigApplicationId:
+    Condition: IsInfra
+    Value: !Ref ConfigApplication
+    Export:
+      Name: linkbot-config-application
+  ConfigProfileId:
+    Condition: IsInfra
+    Value: !Ref ConfigProfile
+    Export:
+      Name: linkbot-config-profile
+
+Resources:
+  GHARole:
+    Condition: IsInfra
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AppName}-github-runner-role
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !ImportValue github-oidc
+            Condition:
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${Repo}:*
+      Policies:
+        - PolicyName: 'inline'
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: []  # Substitution
+  ECRRepo:
+    Condition: IsInfra
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref AppName
+      ImageTagMutability: IMMUTABLE
+      LifecyclePolicy: 
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "delete older dev images",
+                "selection": {
+                  "tagStatus": "tagged",
+                  "tagPrefixList": [
+                    "dev-"
+                  ],
+                  "countNumber": 2,
+                  "countType": "imageCountMoreThan"
+                },
+                "action": {
+                  "type": "expire"
+                }
+              },
+              {
+                "rulePriority": 2,
+                "description": "delete older version images",
+                "selection": {
+                  "tagStatus": "tagged",
+                  "tagPrefixList": [
+                    "release-"
+                  ],
+                  "countNumber": 2,
+                  "countType": "imageCountMoreThan"
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+  ConfigApplication:
+    Condition: IsInfra
+    Type: AWS::AppConfig::Application
+    Properties:
+      Name: !Ref AppName
+      Description: !Sub ${AppName} configuration application
+  ConfigProfile:
+    Condition: IsInfra
+    Type: AWS::AppConfig::ConfigurationProfile
+    Properties:
+      Name: config
+      Description: main configuration
+      ApplicationId: !Ref ConfigApplication
+      LocationUri: hosted
+      Validators:
+        - Type: JSON_SCHEMA
+          Content: !Ref ConfigSchema
+
+
+  # ENVIRONMENT
+
+
+  ConfigEnv:
+    Condition: IsEnv
+    Type: AWS::AppConfig::Environment
+    Properties:
+      Name: !Ref Env
+      Description: !Sub ${Env} environment
+      ApplicationId: 
+        Fn::ImportValue: !Sub ${AppName}-config-application
+      Monitors: []
+  DockerRole:
+    Condition: IsEnv
+    Type: Custom::LightsailDockerRole
+    Properties:
+      ServiceToken: !ImportValue cfn-custom-resource-lightsail-docker-role
+      InstanceName: !Ref LightsailInstance
+      PrivateKey: !Ref LightsailKeyParameter
+      RoleArn: !GetAtt Role.Arn
+      ProfileName: !Sub ${AppName}-${Env}
+  Role:
+    Condition: IsEnv
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AppName}-${Env}-approle-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              AWS: !Sub 'arn:aws:iam::060868188835:user/lightsail/${LightsailInstance}'
+      Policies:
+        - PolicyName: Inline
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement: []  # Substitution
+        - PolicyName: Default
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement: 
+              - Effect: Allow
+                Action: appconfig:GetConfiguration
+                Resource: 
+                  - !Sub 
+                    - arn:aws:appconfig:${AWS::Region}:${AWS::AccountId}:application/${ConfigApplication}
+                    - ConfigApplication: 
+                        Fn::ImportValue: !Sub ${AppName}-config-application
+                  - !Sub 
+                    - arn:aws:appconfig:${AWS::Region}:${AWS::AccountId}:application/${ConfigApplication}/environment/${ConfigEnv}
+                    - ConfigApplication: 
+                        Fn::ImportValue: !Sub ${AppName}-config-application
+                  - !Sub 
+                    - arn:aws:appconfig:${AWS::Region}:${AWS::AccountId}:application/${ConfigApplication}/configurationprofile/${ConfigProfile}
+                    - ConfigApplication: 
+                        Fn::ImportValue: !Sub ${AppName}-config-application
+                      ConfigProfile: 
+                        Fn::ImportValue: !Sub ${AppName}-config-profile

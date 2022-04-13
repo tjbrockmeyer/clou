@@ -13,12 +13,36 @@ Outputs: {}
 
 Resources:
 
+  Instance:
+    Type: AWS::Lightsail::Instance
+    Properties:
+      InstanceName: !Ref Name
+      KeyPairName: !Ref InstanceKeyPair
+      AvailabilityZone: !Sub ${AWS::Region}
+      BlueprintId: amazon_linux_2
+      BundleId: nano_2_0
+      UserData: |
+        sudo yum update -y
+
+        # support for docker
+        sudo yum install -y jq
+        sudo amazon-linux-extras install docker
+        sudo service docker start
+        sudo usermod -a -G docker ec2-user
+
+        # support for certbot
+        sudo wget -r --no-parent -A 'epel-release-*.rpm' https://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/
+        sudo rpm -Uvh dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-*.rpm
+        sudo yum-config-manager --enable epel*
+        sudo yum repolist all
+        sudo amazon-linux-extras install epel -y
+        sudo yum install -y certbot
+
   InstanceKeyPair:
     Type: Custom::LightsailKeyPair
     Properties:
       ServiceToken: !ImportValue cfn-custom-resource-lightsail-key-pair
       KeyPairName: !Sub lightsail-key-pair-${Name}
-
   InstanceKeyPairParam:
     Type: Custom::SecureStringParameter
     Properties:
@@ -27,22 +51,12 @@ Resources:
       Description: !Sub Private Key for the lightsail key pair for instance ${Name}
       Type: SecureString
       Value: !GetAtt InstanceKeyPair.PrivateKey
-
+      
   StaticIp:
-    Type: Custom::LightsailStaticIp
+    Type: AWS::Lightsail::StaticIp
     Properties:
-      ServiceToken: !ImportValue cfn-custom-resource-lightsail-static-ip
       StaticIpName: !Sub lightsail-static-ip-${Name}
-
-  Instance:
-    Type: Custom::LightsailInstance
-    Properties:
-      ServiceToken: !ImportValue cfn-custom-resource-lightsail-instance
-      InstanceName: !Ref Name
-      KeyPairName: !Ref InstanceKeyPair
-      PrivateKey: !GetAtt InstanceKeyPair.PrivateKey
-      AvailabilityZone: !Sub ${AWS::Region}a
-      StaticIpName: !Ref StaticIp
+      AttachedTo: !Ref Instance
 
   User: 
     Type: AWS::IAM::User
@@ -78,11 +92,3 @@ Resources:
       PrivateKey: !GetAtt InstanceKeyPair.PrivateKey
       AccessKeyId: !Ref AccessKey
       SecretAccessKey: !GetAtt AccessKey.SecretAccessKey
-  DockerRole:
-    Type: Custom::LightsailDockerUser
-    Properties:
-      ServiceToken: !ImportValue cfn-custom-resource-lightsail-docker-role
-      InstanceName: !Ref Instance
-      PrivateKey: !GetAtt InstanceKeyPair.PrivateKey
-      RoleArn: arn:aws:iam::060868188835:role/lambdarole
-      ProfileName: lambdarole

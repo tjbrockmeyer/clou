@@ -1,7 +1,0 @@
-
-PolicyStatements:
-  - Effect: Allow
-    Action:
-      - lightsail:CreateKeyPair
-      - lightsail:DeleteKeyPair
-    Resource: !Sub arn:aws:lightsail:*:${AWS::AccountId}:*

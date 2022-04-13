@@ -1,7 +1,0 @@
-
-PolicyStatements:
-  - Effect: Allow
-    Action:
-      - ssm:PutParameter
-      - ssm:DeleteParameter
-    Resource: !Sub arn:aws:ssm:*:${AWS::AccountId}:parameter/*
