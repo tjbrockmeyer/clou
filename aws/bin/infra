@@ -72,7 +72,7 @@ TEMPLATE_NAME="$(yq '.Template' <<< "$CONFIG")"
 APP_NAME="$(yq '.AppName' <<< "$CONFIG")"
 REGIONS="$(yq '.Regions[]' <<< "$CONFIG")"
 BUILD_OVERRIDE="$(yq '.BuildOverride' <<< "$CONFIG" | null_blank)"
-ROLLBACK_FLAG="$([[ "$(yq '.RollbackEnabled' <<< "$CONFIG")" = true ]] && echo --no-disable-rollback || echo --disable-rollback)"
+ROLLBACK_FLAG="$([[ "$(yq '.RollbackDisabled' <<< "$CONFIG")" = true ]] && echo --disable-rollback || echo --no-disable-rollback)"
 
 TOPIC="$(aws ssm get-parameter --name ' /global/stack-notifications-topic-arn' --output text --query 'Parameter.Value')"
 NOTIFICATIONS="$([[ $? = 0 ]] && echo --notification-arns $TOPIC || echo '')"
