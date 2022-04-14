@@ -93,7 +93,8 @@ jobs:
         id: getRuntime
         run: |
           REGEX='^\([a-zA-Z]\+\)\([0-9.]\+\?\)\(\.x\)\?$'
-          RUNTIME="$(yq '.Parameters.Runtime' < "${{ env.FILE }}")"
+          FILE="${{ env.BASE_PATH }}/${{ matrix.package }}/infra.yml"
+          RUNTIME="$(yq '.Parameters.Runtime' < "$FILE")"
           NAME="$(sed "s@$REGEX@\\1@" <<< "$RUNTIME")"
           VERSION="$(sed "s@$REGEX@\\2@" <<< "$RUNTIME")"
           echo "::set-output name=name::$NAME"
