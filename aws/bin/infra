@@ -18,7 +18,7 @@ exit_bad() {
 cleanup() {
     CODE=$?
     set +e
-    rm -rf "$TMP_TEMPLATE" &>/dev/null
+    rm -rf "$TMP_TEMPLATE" "$TMP_LOGS" &>/dev/null
     exit $CODE
 }
 
@@ -106,8 +106,8 @@ if [[ -n "$BUILD_OVERRIDE" ]]; then
     TMP_LOGS="/tmp/$(basename "$TMP_TEMPLATE")"
     echo "running build override command: $BUILD_OVERRIDE"
     if ! bash -c "$BUILD_OVERRIDE" &> "$TMP_LOGS"; then
+        cat "$TMP_LOGS" >&2
         echo "build override failed - command: $BUILD_OVERRIDE" >&2
-        echo "view logs here: $TMP_LOGS"
         exit 1
     fi
     echo "build override - success"
