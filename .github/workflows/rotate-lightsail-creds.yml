@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: "0 4 * * 1"
   workflow_dispatch:
+env:
+  ROLE: arn:aws:iam::060868188835:role/infra-github-runner
+  BASE_DIR: aws/resources
 
 jobs:
   updateFiles:
@@ -17,7 +20,7 @@ jobs:
       - id: updateFiles
         name: Get and Update Files
         run: |
-          cd aws/resources
+          cd "${{ env.BASE_DIR }}"
           LIST=
           for FILE in *; do
           if [[ "$(yq '.Template' < "$FILE")" = lightsail-instance ]]; then
@@ -39,7 +42,7 @@ jobs:
           push: true
 
   deployChanges:
-    if: ${{ needs.updateFiles.outputs.hasFiles == 'true' }}
+    if: needs.updateFiles.outputs.hasFiles == 'true'
     name: Rotate Credentials
     runs-on: ubuntu-latest
     needs:
@@ -56,8 +59,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1
-          role-to-assume: arn:aws:iam::060868188835:role/infra-github-runner
+          role-to-assume: ${{ env.ROLE }}
       - name: Rotate Access Key for ${{ matrix.fileName }}
         run: |
-          cd aws/resources
-          ../bin/infra -c "${{ matrix.fileName }}"
+          ./aws/bin/infra -c "${{ env.BASE_DIR }}/${{ matrix.fileName }}"

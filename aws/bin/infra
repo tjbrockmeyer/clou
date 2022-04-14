@@ -68,6 +68,8 @@ DASH_ENV="$([[ -z $ENV ]] && echo "" || echo "-$ENV")"
 ENV_TAG="$([[ -z $ENV ]] && echo "" || echo "Env=$ENV")"
 CONFIG="$(sed "s@{{ env }}@$ENV@g" < "$CONFIG_FILE")"
 
+cd "$(dirname "$CONFIG_FILE")"
+
 TEMPLATE_NAME="$(yq '.Template' <<< "$CONFIG")"
 APP_NAME="$(yq '.AppName' <<< "$CONFIG")"
 REGIONS="$(yq '.Regions[]' <<< "$CONFIG")"
