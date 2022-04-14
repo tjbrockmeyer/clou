@@ -90,7 +90,7 @@ if not_null '.Metadata' "$TEMPLATE" && has_keys '.Metadata.Substitution' "$TEMPL
         TEMPLATE="$(yq "$UPDATE = $VALUE" <<< "$TEMPLATE")"
     done <<< "$(yq -o j -I 0 '.Metadata.Substitution | keys | .[]' <<< "$TEMPLATE" | jq -r | sed 's@\r@@g')"
 fi
-TMP_TEMPLATE="$(dirname "$CONFIG_FILE")/.tmp-infra-$RANDOM"
+TMP_TEMPLATE=".tmp-infra-$RANDOM"
 echo "$TEMPLATE" > "$TMP_TEMPLATE"
 
 PARAMETERS=
@@ -114,7 +114,7 @@ if [[ -n "$BUILD_OVERRIDE" ]]; then
 fi
 while read REGION; do
     if [[ -z "$BUILD_OVERRIDE" ]]; then
-        BUILD_DIR="$(dirname "$CONFIG_FILE")/.aws-sam/build-$STACK_NAME-$REGION"
+        BUILD_DIR=".aws-sam/build-$STACK_NAME-$REGION"
         $SAM build \
             --template "$TMP_TEMPLATE" \
             --build-dir "$BUILD_DIR" \
