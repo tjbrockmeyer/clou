@@ -1,11 +1,12 @@
 {
   "extends": "../tsconfig-base.json",
   "references": [
-    {"path": "../utils"}
+    {
+      "path": "../utils"
+    }
   ],
   "compilerOptions": {
-    /* Visit https://aka.ms/tsconfig.json to read more about this file */
-    "rootDir": "src",                                  /* Specify the root folder within your source files. */
-    "outDir": "dist",                                   /* Specify an output folder for all emitted files. */
+    "rootDir": "src",
+    "outDir": "dist"
   }
 }

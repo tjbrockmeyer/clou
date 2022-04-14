@@ -15,6 +15,5 @@ Substitution:
     - Effect: Allow
       Action:
         - lightsail:GetInstance
-        - lightsail:GetInstance
       Resource: 
         Fn::Sub: arn:aws:lightsail:*:${AWS::AccountId}:*

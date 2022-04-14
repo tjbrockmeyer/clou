@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "prepack": "npm ci && npm run build && npm prune --production",
     "build": "tsc -b",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prep": "npm ci && npm run build && npm prune --production",
+    "preinstall": "cd ../utils && npm ci",
+    "prepack": "npm run prep"
   },
   "dependencies": {
     "my-utils": "file:../utils"
