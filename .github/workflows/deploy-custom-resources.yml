@@ -82,8 +82,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    env:
-      INFRA_YML: ${{ env.BASE_PATH }}/${{ matrix.package }}/infra.yml
     steps:
       - uses: frenck/action-setup-yq@v1
       - uses: actions/checkout@v3
