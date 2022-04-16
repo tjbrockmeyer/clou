@@ -18,7 +18,7 @@ exit_bad() {
 cleanup() {
     CODE=$?
     set +e
-    rm -rf "$TMP_TEMPLATE" "$TMP_LOGS" &>/dev/null
+    rm -rf "$TMP_TEMPLATE" &>/dev/null
     exit $CODE
 }
 
@@ -105,10 +105,8 @@ fi
 PARAMETER_OVERRIDES="$([[ -z "$PARAMETERS" ]] && echo "" || echo "--parameter-overrides $PARAMETERS")" 
 
 if [[ -n "$PRE_BUILD" ]]; then
-    TMP_LOGS="/tmp/$(basename "$TMP_TEMPLATE")"
     echo "running build override command: $PRE_BUILD"
-    if ! bash -c "$PRE_BUILD" &> "$TMP_LOGS"; then
-        cat "$TMP_LOGS" >&2
+    if ! bash -c "$PRE_BUILD"; then
         echo "build override failed - command: $PRE_BUILD" >&2
         exit 1
     fi

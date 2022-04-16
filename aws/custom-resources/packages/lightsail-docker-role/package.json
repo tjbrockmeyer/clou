@@ -6,8 +6,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "my-utils": "^1.0.0"
-  }
+  },
+  "description": ""
 }

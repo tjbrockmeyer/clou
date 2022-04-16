@@ -4,9 +4,9 @@ AppName: lightsail-docker-role
 Regions:
   - us-east-1
 PreBuild: |
-  pushd ../.. && npm ci -ws && popd && \
+  pushd ../.. && npm ci && popd && \
   npx tsc -b && npx ncc build src/index.ts -mo dist && cp schema.json dist && \
-  cd dist && npm init -y
+  cd dist && npm init -y >/dev/null
 
 Parameters:
   Name: lightsail-docker-role
