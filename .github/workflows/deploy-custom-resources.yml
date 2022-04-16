@@ -46,8 +46,8 @@ jobs:
         id: getChangedPackages
         run: |
           cd ${{ env.BASE_PATH }}
-          if [[ ${{ github.event_name }} = workflow_dispatch ]]; then
-            if [[ ${{ github.event.inputs.action }} = 'create/update' ]]; then
+          if [[ "${{ github.event_name }}" = workflow_dispatch ]]; then
+            if [[ "${{ github.event.inputs.action }}" = 'create/update' ]]; then
               CHANGES=
               for PACKAGE in ${{ github.event.inputs.packages }}; do
                 CHANGES+=",\"$PACKAGE\""
@@ -78,8 +78,8 @@ jobs:
         id: getDeletedPackages
         run: |
           cd ${{ env.BASE_PATH }}
-          if [[ ${{ github.event_name }} = workflow_dispatch ]]; then
-            if [[ ${{ github.event.inputs.action }} = 'delete' ]]; then
+          if [[ "${{ github.event_name }}" = workflow_dispatch ]]; then
+            if [[ "${{ github.event.inputs.action }}" = 'delete' ]]; then
               DELETIONS=
               for PACKAGE in ${{ github.event.inputs.packages }}; do
                 DELETIONS+=",\"$PACKAGE\""
