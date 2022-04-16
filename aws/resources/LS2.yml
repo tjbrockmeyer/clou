@@ -1,0 +1,8 @@
+Version: master
+Template: lightsail-instance
+AppName: orange
+Regions:
+  - us-east-1
+Parameters:
+  Name: orange
+  AccessKeySerial: 8

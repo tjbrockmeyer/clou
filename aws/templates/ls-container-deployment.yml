@@ -6,6 +6,8 @@ Metadata:
     AppRolePolicies: '.Resources.Role.Properties.Policies[0].PolicyDocument.Statement'
 
 Parameters:
+  NeedGHARole:
+    Type: String
   AppName:
     Type: String
   Env:
@@ -24,6 +26,11 @@ Parameters:
     Type: String
 
 Conditions:
+  CreateGHARole: !And 
+    - !Condition IsInfra
+    - !Equals 
+      - !Ref NeedGHARole
+      - 'yes'
   IsInfra: !Equals 
     - !Ref Env
     - infra
@@ -46,7 +53,7 @@ Outputs:
 
 Resources:
   GHARole:
-    Condition: IsInfra
+    Condition: CreateGHARole
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub ${AppName}-github-runner-role
@@ -64,7 +71,7 @@ Resources:
         - PolicyName: 'inline'
           PolicyDocument:
             Version: "2012-10-17"
-            Statement: []  # Substitution
+            Statement: []
   ECRRepo:
     Condition: IsInfra
     Type: AWS::ECR::Repository
@@ -162,7 +169,7 @@ Resources:
         - PolicyName: Inline
           PolicyDocument:
             Version: '2012-10-17'
-            Statement: []  # Substitution
+            Statement: []
         - PolicyName: Default
           PolicyDocument:
             Version: '2012-10-17'

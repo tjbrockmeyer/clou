@@ -73,7 +73,7 @@ cd "$(dirname "$CONFIG_FILE")"
 TEMPLATE_NAME="$(yq '.Template' <<< "$CONFIG")"
 APP_NAME="$(yq '.AppName' <<< "$CONFIG")"
 REGIONS="$(yq '.Regions[]' <<< "$CONFIG")"
-BUILD_OVERRIDE="$(yq '.BuildOverride' <<< "$CONFIG" | null_blank)"
+PRE_BUILD="$(yq '.PreBuild' <<< "$CONFIG" | null_blank)"
 ROLLBACK_FLAG="$([[ "$(yq '.RollbackDisabled' <<< "$CONFIG")" = true ]] && echo --disable-rollback || echo --no-disable-rollback)"
 
 TOPIC="$(aws ssm get-parameter --name ' /global/stack-notifications-topic-arn' --output text --query 'Parameter.Value')"
@@ -87,7 +87,9 @@ if not_null '.Metadata' "$TEMPLATE" && has_keys '.Metadata.Substitution' "$TEMPL
     while read NAME; do 
         UPDATE="$(yq ".Metadata.Substitution.$NAME" <<< "$TEMPLATE")"
         VALUE="$(yq -o json -I 0 ".Substitution.$NAME" <<< "$CONFIG")"
-        TEMPLATE="$(yq "$UPDATE = $VALUE" <<< "$TEMPLATE")"
+        if not_null "$VALUE"; then 
+            TEMPLATE="$(yq "$UPDATE = $VALUE" <<< "$TEMPLATE")"
+        fi
     done <<< "$(yq -o j -I 0 '.Metadata.Substitution | keys | .[]' <<< "$TEMPLATE" | jq -r | sed 's@\r@@g')"
 fi
 TMP_TEMPLATE=".tmp-infra-$RANDOM"
@@ -97,33 +99,29 @@ PARAMETERS=
 if [[ "$(yq '.Parameters' <<< "$CONFIG")" != null ]] && [[ "$(yq '.Parameters | keys | length' <<< "$CONFIG")" != 0 ]]; then
     while read NAME; do
         VALUE="$(yq ".Parameters.$NAME" <<< "$CONFIG")"
-        PARAMETERS+=" $NAME='$VALUE'"
+        PARAMETERS+=" $NAME=$VALUE"
     done <<< "$(yq '.Parameters | keys | .[]' <<< "$CONFIG")"
 fi
-PARAMETER_OVERRIDES="$([[ -z "$PARAMETERS" ]] && echo "" || echo "--parameter-overrides $PARAMETERS")"
+PARAMETER_OVERRIDES="$([[ -z "$PARAMETERS" ]] && echo "" || echo "--parameter-overrides $PARAMETERS")" 
 
-if [[ -n "$BUILD_OVERRIDE" ]]; then
+if [[ -n "$PRE_BUILD" ]]; then
     TMP_LOGS="/tmp/$(basename "$TMP_TEMPLATE")"
-    echo "running build override command: $BUILD_OVERRIDE"
-    if ! bash -c "$BUILD_OVERRIDE" &> "$TMP_LOGS"; then
+    echo "running build override command: $PRE_BUILD"
+    if ! bash -c "$PRE_BUILD" &> "$TMP_LOGS"; then
         cat "$TMP_LOGS" >&2
-        echo "build override failed - command: $BUILD_OVERRIDE" >&2
+        echo "build override failed - command: $PRE_BUILD" >a&2
         exit 1
     fi
     echo "build override - success"
 fi
 while read REGION; do
-    if [[ -z "$BUILD_OVERRIDE" ]]; then
-        BUILD_DIR=".aws-sam/build-$STACK_NAME-$REGION"
-        $SAM build \
-            --template "$TMP_TEMPLATE" \
-            --build-dir "$BUILD_DIR" \
-            --region "$REGION" \
-            $PARAMETER_OVERRIDES
-        DEPLOY_TEMPLATE="$BUILD_DIR/template.yaml"
-    else
-        DEPLOY_TEMPLATE="$TMP_TEMPLATE"
-    fi
+    BUILD_DIR=".aws-sam/build-$STACK_NAME-$REGION"
+    $SAM build \
+        --template "$TMP_TEMPLATE" \
+        --build-dir "$BUILD_DIR" \
+        --region "$REGION" \
+        $PARAMETER_OVERRIDES
+    DEPLOY_TEMPLATE="$BUILD_DIR/template.yaml"
     $SAM deploy \
         --stack-name "$STACK_NAME" \
         --region "$REGION" \

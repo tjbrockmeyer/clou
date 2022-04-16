@@ -3,12 +3,16 @@ Template: custom-resource
 AppName: lightsail-user
 Regions:
   - us-east-1
-BuildOverride: rm -rf .aws-sam && npm run prepack
+PreBuild: |
+  pushd ../.. && npm ci && popd && \
+  npx tsc -b && npx ncc build src/index.ts -mo dist && cp schema.json dist && \
+  cd dist && npm init -y
 
 Parameters:
   Name: lightsail-user
   Runtime: nodejs14.x
-  Handler: dist/index.handler
+  Handler: index.handler
+  CodeDir: './dist'
   
 Substitution:
   PolicyStatements:

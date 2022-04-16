@@ -5,11 +5,11 @@ on:
       - master
       - main
     paths:
-      - 'aws/custom-resources/**'
+      - 'aws/custom-resources/packages/**'
   workflow_dispatch:
 env: 
   ROLE: arn:aws:iam::060868188835:role/infra-github-runner
-  BASE_PATH: aws/custom-resources
+  BASE_PATH: aws/custom-resources/packages
 
 jobs:
   getPackages:

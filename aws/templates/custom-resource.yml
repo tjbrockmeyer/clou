@@ -4,6 +4,7 @@ Transform: AWS::Serverless-2016-10-31
 Metadata:
   Substitution:
     PolicyStatements: '.Resources.Function.Properties.Policies[0].Statement'
+    FunctionMetadata: '.Resources.Function.Metadata'
 
 Parameters:
   Name: 
@@ -12,6 +13,9 @@ Parameters:
     Type: String
   Handler:
     Type: String
+  CodeDir:
+    Type: String
+    Default: '.'
 
 Globals:
   Function:
@@ -35,6 +39,7 @@ Resources:
       Runtime: !Ref Runtime
       Timeout: 600
       PackageType: Zip
-      CodeUri: './'
+      CodeUri: !Ref CodeDir
       Policies:
         - Statement: []
+    Metadata: {}
