@@ -1,1 +1,1 @@
-https://github.com/lethrez/custom-resource-helper/archive/cc77636ee475474091fcaf363ca08ad49691cbb7.tar.gz
+crhelper

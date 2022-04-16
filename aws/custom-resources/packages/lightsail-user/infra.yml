@@ -13,7 +13,6 @@ Parameters:
   Runtime: nodejs14.x
   Handler: index.handler
   CodeDir: './dist'
-  
 Substitution:
   PolicyStatements:
     - Effect: Allow

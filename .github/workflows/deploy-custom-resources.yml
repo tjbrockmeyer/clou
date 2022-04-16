@@ -108,6 +108,7 @@ jobs:
     needs: 
       - getPackages
     strategy:
+      fail-fast: false
       matrix:
         package: ${{ fromJSON(needs.getPackages.outputs.changedPackages) }}
     permissions:
@@ -151,6 +152,7 @@ jobs:
     needs: 
       - getPackages
     strategy:
+      fail-fast: false
       matrix:
         package: ${{ fromJSON(needs.getPackages.outputs.deletedPackages) }}
     permissions:
