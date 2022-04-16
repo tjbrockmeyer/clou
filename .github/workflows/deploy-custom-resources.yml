@@ -7,6 +7,19 @@ on:
     paths:
       - 'aws/custom-resources/packages/**'
   workflow_dispatch:
+    inputs:
+      action: 
+        description: the type of action to take for each package
+        required: true
+        type: choice
+        options:
+          - create/update
+          - delete
+      packages:
+        description: space-separated package names
+        required: true
+        type: string
+
 env: 
   ROLE: arn:aws:iam::060868188835:role/infra-github-runner
   BASE_PATH: aws/custom-resources/packages
@@ -33,21 +46,30 @@ jobs:
         id: getChangedPackages
         run: |
           cd ${{ env.BASE_PATH }}
-          PACKAGES=
-          for PACKAGE in *; do
-            if [[ -e "$PACKAGE/infra.yml" ]] && [[ "$(yq '.Template' < "$PACKAGE/infra.yml")" = custom-resource ]]; then
-              PACKAGES+=" $PACKAGE"
-            fi
-          done
-          CHANGES=
-          for PACKAGE in $PACKAGES; do
-            for FILE in ${{ steps.changedFiles.outputs.all_changed_and_modified_files }}; do
-              if [[ "$FILE" = "${{ env.BASE_PATH }}/$PACKAGE/"* ]]; then
+          if [[ ${{ github.event_name }} = workflow_dispatch ]]; then
+            if [[ ${{ github.event.inputs.action }} = 'create/update' ]]; then
+              CHANGES=
+              for PACKAGE in ${{ github.event.inputs.packages }}; do
                 CHANGES+=",\"$PACKAGE\""
-                break
+              done
+            fi
+          else
+            PACKAGES=
+            for PACKAGE in *; do
+              if [[ -e "$PACKAGE/infra.yml" ]] && [[ "$(yq '.Template' < "$PACKAGE/infra.yml")" = custom-resource ]]; then
+                PACKAGES+=" $PACKAGE"
               fi
             done
-          done
+            CHANGES=
+            for PACKAGE in $PACKAGES; do
+              for FILE in ${{ steps.changedFiles.outputs.all_changed_and_modified_files }}; do
+                if [[ "$FILE" = "${{ env.BASE_PATH }}/$PACKAGE/"* ]]; then
+                  CHANGES+=",\"$PACKAGE\""
+                  break
+                fi
+              done
+            done
+          fi
           CHANGES="[$(cut -c2- <<< "$CHANGES")]"
           echo "$CHANGES"
           echo "::set-output name=hasPackages::$([[ "$CHANGES" = '[]' ]] && echo false || echo true)"
@@ -56,15 +78,24 @@ jobs:
         id: getDeletedPackages
         run: |
           cd ${{ env.BASE_PATH }}
-          DELETIONS=
-          for PACKAGE in *; do
-            for FILE in ${{ steps.infraYmls.outputs.deleted_files }}; do
-              if [[ "$FILE" = "${{ env.BASE_PATH }}/$PACKAGE/"* ]]; then
+          if [[ ${{ github.event_name }} = workflow_dispatch ]]; then
+            if [[ ${{ github.event.inputs.action }} = 'delete' ]]; then
+              DELETIONS=
+              for PACKAGE in ${{ github.event.inputs.packages }}; do
                 DELETIONS+=",\"$PACKAGE\""
-                break
-              fi
+              done
+            fi
+          else
+            DELETIONS=
+            for PACKAGE in *; do
+              for FILE in ${{ steps.infraYmls.outputs.deleted_files }}; do
+                if [[ "$FILE" = "${{ env.BASE_PATH }}/$PACKAGE/"* ]]; then
+                  DELETIONS+=",\"$PACKAGE\""
+                  break
+                fi
+              done
             done
-          done
+          fi
           DELETIONS="[$(cut -c2- <<< "$DELETIONS")]"
           echo "$DELETIONS"
           echo "::set-output name=hasPackages::$([[ "$DELETIONS" = '[]' ]] && echo false || echo true)"
@@ -103,6 +134,7 @@ jobs:
         if: steps.getRuntime.outputs.name == 'nodejs'
         with:
           node-version: ${{ steps.getRuntime.outputs.version }}
+        run: npm i -g npm
       - uses: actions/setup-python@v3.1.2
         if: steps.getRuntime.outputs.name == 'python'
         with:

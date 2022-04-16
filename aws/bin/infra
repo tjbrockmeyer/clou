@@ -109,7 +109,7 @@ if [[ -n "$PRE_BUILD" ]]; then
     echo "running build override command: $PRE_BUILD"
     if ! bash -c "$PRE_BUILD" &> "$TMP_LOGS"; then
         cat "$TMP_LOGS" >&2
-        echo "build override failed - command: $PRE_BUILD" >a&2
+        echo "build override failed - command: $PRE_BUILD" >&2
         exit 1
     fi
     echo "build override - success"
