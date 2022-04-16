@@ -134,7 +134,8 @@ jobs:
         if: steps.getRuntime.outputs.name == 'nodejs'
         with:
           node-version: ${{ steps.getRuntime.outputs.version }}
-        run: npm i -g npm
+      - run: npm i -g npm
+        if: steps.getRuntime.outputs.name == 'nodejs'
       - uses: actions/setup-python@v3.1.2
         if: steps.getRuntime.outputs.name == 'python'
         with:
