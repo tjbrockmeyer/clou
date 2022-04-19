@@ -8,11 +8,14 @@ const getDirPath = (dirname: string) => `~/lightsail-docker-compose/${dirname}`;
 interface Props {
     InstanceName: string;
     PrivateKey: string;
-    ComposeFile: string;
+    ComposeFile: string | Record<string, unknown>;
     RoleArn: string;
 }
 
-interface Data {}
+interface Data { }
+
+const coerceFile = (file: string | Record<string, unknown>): string =>
+    typeof file === 'string' ? file : JSON.stringify(file);
 
 const assumeRole = async (ssh: SSH, roleArn: string, instanceName: string): Promise<void> => {
     try {
@@ -42,7 +45,7 @@ const composeUp = async (ssh: SSH, composeFile: string, dirname: string) => {
 mkdir ${getDirPath(dirname)} &&
 echo '${composeFile.replace(/'/g, "'\\''")}' > ${getFilepath(dirname)} &&
 cd ${getDirPath(dirname)} &&
-docker compose up`);
+docker compose up -d`);
 }
 
 const composeDown = async (ssh: SSH, dirname: string) => {
@@ -57,7 +60,7 @@ export const handler = customResource<Props, Data>({
     schema,
     resourceExists: async (props, physicalId) => {
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey);
-        if(!ssh) {
+        if (!ssh) {
             return false;
         }
         const output = await ssh.exec(`[[ -f ${getFilepath(physicalId)} ]] && echo 'exists' || echo 'missing'`);
@@ -67,22 +70,22 @@ export const handler = customResource<Props, Data>({
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH;
         await assumeRole(ssh, props.RoleArn, props.InstanceName);
         await putCredentials(ssh, props.InstanceName, props.RoleArn, physicalId);
-        await composeUp(ssh, props.ComposeFile, physicalId);
+        await composeUp(ssh, coerceFile(props.ComposeFile), physicalId);
         return success();
     },
     onUpdate: async (props, before, physicalId) => {
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH;
         await assumeRole(ssh, props.RoleArn, props.InstanceName);
-        if(before.InstanceName !== props.InstanceName) {
+        if (before.InstanceName !== props.InstanceName) {
             const beforeSsh = await getLightsailConnection(before.InstanceName, before.PrivateKey);
-            if(beforeSsh) {
+            if (beforeSsh) {
                 await deleteCredentials(beforeSsh, physicalId);
                 await composeDown(beforeSsh, physicalId);
                 await deleteDir(beforeSsh, physicalId);
             }
         }
         await putCredentials(ssh, props.InstanceName, props.RoleArn, physicalId);
-        await composeUp(ssh, props.ComposeFile, physicalId);
+        await composeUp(ssh, coerceFile(props.ComposeFile), physicalId);
         return success();
     },
     onDelete: async (props, physicalId) => {

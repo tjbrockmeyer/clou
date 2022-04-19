@@ -4,6 +4,7 @@ Metadata:
   Substitution:
     GithubRunnerPolicies: '.Resources.GHARole.Properties.Policies[0].PolicyDocument.Statement'
     AppRolePolicies: '.Resources.Role.Properties.Policies[0].PolicyDocument.Statement'
+    ComposeFile: '.Resources.DockerCompose.Properties.ComposeFile'
 
 Parameters:
   NeedGHARole:
@@ -22,8 +23,6 @@ Parameters:
     Type: String
   LightsailKeyParameter:
     Type: AWS::SSM::Parameter::Value<String>
-  ConfigSchema:
-    Type: String
 
 Conditions:
   CreateGHARole: !And 
@@ -38,18 +37,6 @@ Conditions:
     - !Equals 
       - !Ref Env
       - infra
-
-Outputs:
-  ConfigApplicationId:
-    Condition: IsInfra
-    Value: !Ref ConfigApplication
-    Export:
-      Name: linkbot-config-application
-  ConfigProfileId:
-    Condition: IsInfra
-    Value: !Ref ConfigProfile
-    Export:
-      Name: linkbot-config-profile
 
 Resources:
   GHARole:
@@ -114,46 +101,21 @@ Resources:
               }
             ]
           }
-  ConfigApplication:
-    Condition: IsInfra
-    Type: AWS::AppConfig::Application
-    Properties:
-      Name: !Ref AppName
-      Description: !Sub ${AppName} configuration application
-  ConfigProfile:
-    Condition: IsInfra
-    Type: AWS::AppConfig::ConfigurationProfile
-    Properties:
-      Name: config
-      Description: main configuration
-      ApplicationId: !Ref ConfigApplication
-      LocationUri: hosted
-      Validators:
-        - Type: JSON_SCHEMA
-          Content: !Ref ConfigSchema
 
 
   # ENVIRONMENT
 
 
-  ConfigEnv:
+  DockerCompose:
     Condition: IsEnv
-    Type: AWS::AppConfig::Environment
+    Type: Custom::LightsailDockerCompose
     Properties:
-      Name: !Ref Env
-      Description: !Sub ${Env} environment
-      ApplicationId: 
-        Fn::ImportValue: !Sub ${AppName}-config-application
-      Monitors: []
-  DockerRole:
-    Condition: IsEnv
-    Type: Custom::LightsailDockerRole
-    Properties:
-      ServiceToken: !ImportValue cfn-custom-resource-lightsail-docker-role
+      ServiceToken: !ImportValue cfn-custom-resource-lightsail-docker-compose
       InstanceName: !Ref LightsailInstance
       PrivateKey: !Ref LightsailKeyParameter
       RoleArn: !GetAtt Role.Arn
-      ProfileName: !Sub ${AppName}-${Env}
+      Serial: 1
+      ComposeFile: {}
   Role:
     Condition: IsEnv
     Type: AWS::IAM::Role
@@ -170,24 +132,3 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement: []
-        - PolicyName: Default
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement: 
-              - Effect: Allow
-                Action: appconfig:GetConfiguration
-                Resource: 
-                  - !Sub 
-                    - arn:aws:appconfig:${AWS::Region}:${AWS::AccountId}:application/${ConfigApplication}
-                    - ConfigApplication: 
-                        Fn::ImportValue: !Sub ${AppName}-config-application
-                  - !Sub 
-                    - arn:aws:appconfig:${AWS::Region}:${AWS::AccountId}:application/${ConfigApplication}/environment/${ConfigEnv}
-                    - ConfigApplication: 
-                        Fn::ImportValue: !Sub ${AppName}-config-application
-                  - !Sub 
-                    - arn:aws:appconfig:${AWS::Region}:${AWS::AccountId}:application/${ConfigApplication}/configurationprofile/${ConfigProfile}
-                    - ConfigApplication: 
-                        Fn::ImportValue: !Sub ${AppName}-config-application
-                      ConfigProfile: 
-                        Fn::ImportValue: !Sub ${AppName}-config-profile

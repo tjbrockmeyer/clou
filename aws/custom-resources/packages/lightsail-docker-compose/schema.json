@@ -3,7 +3,8 @@
     "required": [
         "InstanceName",
         "PrivateKey",
-        "ComposeFile"
+        "ComposeFile",
+        "RoleArn"
     ],
     "properties": {
         "InstanceName": {
@@ -14,7 +15,10 @@
         },
         "ComposeFile": {
             "description": "the raw compose file",
-            "type": "string"
+            "type": [
+                "string",
+                "object"
+            ]
         },
         "RoleArn": {
             "description": "the role to execute the task with",
