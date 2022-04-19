@@ -35,6 +35,20 @@ has_keys() {
     return $?
 }
 
+# do_config_subs() {
+#     RESULT="$(sed 's@{{ \(.\+\) }}@\1@g' <<< "$1")"
+#     if [[ -n "$RESULT" ]]; then
+#         RESULT="$(do_config_subs <<< "$RESULT")"
+#         if [[ "$RESULT" = env ]]; then
+#             printf -- "$ENV"
+#         elif [[ "$RESULT" = "file "* ]]; then
+
+#         fi
+#     else
+#         printf -- "$1"
+#     fi
+# }
+
 set -e
 
 trap cleanup EXIT ERR INT TERM

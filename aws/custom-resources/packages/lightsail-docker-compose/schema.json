@@ -3,8 +3,7 @@
     "required": [
         "InstanceName",
         "PrivateKey",
-        "RoleArn",
-        "ProfileName"
+        "ComposeFile"
     ],
     "properties": {
         "InstanceName": {
@@ -13,11 +12,17 @@
         "PrivateKey": {
             "type": "string"
         },
-        "RoleArn": {
+        "ComposeFile": {
+            "description": "the raw compose file",
             "type": "string"
         },
-        "ProfileName": {
+        "RoleArn": {
+            "description": "the role to execute the task with",
             "type": "string"
+        },
+        "Serial": {
+            "description": "increase this number to force a redeploy",
+            "type": "integer"
         }
     }
 }

@@ -1,0 +1,17 @@
+{
+  "name": "lightsail-docker-compose",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -b && ncc build src/index.ts -mo dist",
+    "prebuild": "cd ../.. && npm ci",
+    "prepack": "npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "my-utils": "^1.0.0"
+  }
+}

@@ -1,6 +1,6 @@
 Version: master
 Template: custom-resource
-AppName: lightsail-docker-role
+AppName: lightsail-docker-app-deployment
 Regions:
   - us-east-1
 PreBuild: |
@@ -9,7 +9,7 @@ PreBuild: |
   cd dist && npm init -y >/dev/null
 
 Parameters:
-  Name: lightsail-docker-role
+  Name: lightsail-docker-app-deployment
   Runtime: nodejs14.x
   Handler: index.handler
   CodeDir: './dist'
