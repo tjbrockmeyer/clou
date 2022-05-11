@@ -1,0 +1,12 @@
+version: master
+name: LS1
+default: instance
+deployments:
+  instance:
+    provider: aws
+    using: lightsail-instance
+    regions:
+      - us-east-1
+    parameters:
+      Name: '{{ ref name }}'
+      AccessKeySerial: 9

@@ -1,0 +1,24 @@
+version: master
+name: lightsail-user
+default: custom-resource
+deployments:
+  custom-resource:
+    provider: aws
+    using: custom-resource
+    regions:
+      - us-east-1
+    preBuild: |
+      pushd ../.. && npm ci && popd && \
+      npx tsc -b && npx ncc build src/index.ts -mo dist && cp schema.json dist && \
+      cd dist && npm init -y >/dev/null
+    parameters:
+      Name: '{{ ref name }}'
+      Runtime: nodejs14.x
+      Handler: index.handler
+      CodeDir: './dist'
+      PolicyStatements:
+        - Effect: Allow
+          Action:
+            - lightsail:GetInstance
+          Resource: 
+            Fn::Sub: arn:aws:lightsail:*:${AWS::AccountId}:*

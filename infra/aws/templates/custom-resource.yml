@@ -3,8 +3,12 @@ Transform: AWS::Serverless-2016-10-31
 
 Metadata:
   Substitution:
-    PolicyStatements: '.Resources.Function.Properties.Policies[0].Statement'
-    FunctionMetadata: '.Resources.Function.Metadata'
+    PolicyStatements: 
+      Path: Resources.Function.Properties.Policies[0]
+      At: Statement
+    FunctionMetadata:
+      Path: Resources.Function
+      At: Metadata
 
 Parameters:
   Name: 

@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  AppName:
+    Type: String
+
+Outputs:
+  ECRRepoArn: 
+    Value: !GetAtt ECRRepo.Arn
+    Export:
+      Name: !Sub ${AppName}-ecr-repo-arn
+
+Resources:
+  ECRRepo:
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref AppName
+      ImageTagMutability: IMMUTABLE
+      LifecyclePolicy: 
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "delete older dev images",
+                "selection": {
+                  "tagStatus": "tagged",
+                  "tagPrefixList": [
+                    "dev-"
+                  ],
+                  "countNumber": 2,
+                  "countType": "imageCountMoreThan"
+                },
+                "action": {
+                  "type": "expire"
+                }
+              },
+              {
+                "rulePriority": 2,
+                "description": "delete older version images",
+                "selection": {
+                  "tagStatus": "tagged",
+                  "tagPrefixList": [
+                    "release-"
+                  ],
+                  "countNumber": 2,
+                  "countType": "imageCountMoreThan"
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }

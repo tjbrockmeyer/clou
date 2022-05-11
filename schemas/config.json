@@ -1,0 +1,97 @@
+{
+  "$ref": "#/definitions/Config",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Config": {
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          ]
+        },
+        "deployments": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Deployment"
+              },
+              {
+                "items": {
+                  "$ref": "#/definitions/Deployment"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        },
+        "vars": {
+          "additionalProperties": {},
+          "type": "object"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "name",
+        "deployments"
+      ],
+      "type": "object"
+    },
+    "Deployment": {
+      "additionalProperties": false,
+      "properties": {
+        "disableRollback": {
+          "type": "boolean"
+        },
+        "parameters": {
+          "additionalProperties": {},
+          "type": "object"
+        },
+        "preBuild": {
+          "type": "string"
+        },
+        "provider": {
+          "const": "aws",
+          "type": "string"
+        },
+        "regions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          ]
+        },
+        "using": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "using",
+        "regions"
+      ],
+      "type": "object"
+    }
+  }
+}

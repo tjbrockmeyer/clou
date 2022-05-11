@@ -1,7 +1,0 @@
-Template: main
-AppName: stack
-Regions:
-  - us-east-1
-
-Parameters: {}
-Substitution: {}

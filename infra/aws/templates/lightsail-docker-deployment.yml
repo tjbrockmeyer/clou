@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Metadata:
+  Substitution:
+    AppRolePolicies:
+      Path: Resources.Role.Properties.Policies[0].PolicyDocument
+      At: Statement
+    ComposeFile:
+      Path: Resources.DockerCompose.Properties
+      At: ComposeFile
+
+Parameters:
+  AppName:
+    Type: String
+  Env:
+    Type: String
+    AllowedValues:
+      - np
+      - prod
+  LightsailInstance:
+    Type: String
+  LightsailKeyParameter:
+    Type: AWS::SSM::Parameter::Value<String>
+
+Resources:
+  DockerCompose:
+    Type: Custom::LightsailDockerCompose
+    Properties:
+      ServiceToken: !ImportValue cfn-custom-resource-lightsail-docker-compose
+      InstanceName: !Ref LightsailInstance
+      PrivateKey: !Ref LightsailKeyParameter
+      RoleArn: !GetAtt Role.Arn
+      Serial: 1
+      ComposeFile: {}
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AppName}-${Env}-approle-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              AWS: !Sub 'arn:aws:iam::060868188835:user/lightsail/${LightsailInstance}'
+      Policies:
+        - PolicyName: Inline
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement: []
+        - PolicyName: Default
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Resource: 
+                  Fn::ImportValue: !Sub ${AppName}-${Env}-ecr-repo-arn
+                Action: 
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload

@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 env:
   ROLE: arn:aws:iam::060868188835:role/infra-github-runner
-  BASE_DIR: aws/resources
+  BASE_DIR: infra/aws/resources
 
 jobs:
   updateFiles:

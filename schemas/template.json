@@ -1,0 +1,46 @@
+{
+  "$ref": "#/definitions/Template",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Template": {
+      "additionalProperties": {},
+      "properties": {
+        "Metadata": {
+          "additionalProperties": false,
+          "properties": {
+            "Substitution": {
+              "additionalProperties": {
+                "additionalProperties": false,
+                "properties": {
+                  "At": {
+                    "description": "key name or index number",
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  },
+                  "Path": {
+                    "description": "jmespath spec to an object or array",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "Path",
+                  "At"
+                ],
+                "type": "object"
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "Parameters": {
+          "additionalProperties": {},
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

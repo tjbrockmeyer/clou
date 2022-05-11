@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  AppName:
+    Type: String
+  RepoOrgAndName:
+    Type: String
+
+Metadata:
+  Substitution:
+    Policies: 
+      Path: Resources.Role.Policies[0].PolicyDocument
+      At: Statement
+
+Outputs:
+  RoleArn:
+    Value: !GetAtt Role.Arn
+    Export:
+      Name: !Sub '${AppName}-github-runner-role'
+
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AppName}-github-runner-role
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !ImportValue github-oidc
+            Condition:
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${RepoOrgAndName}:*
+      Policies:
+        - PolicyName: 'inline'
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: []
