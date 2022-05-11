@@ -7,13 +7,12 @@ import { readFile, writeFile } from "fs/promises";
 import { randomInt } from "crypto";
 import { validateTemplate } from "../types/template";
 import { objectFromKeys, projectRoot, spawnAsync } from "../utils";
-import { unlink } from "fs/promises";
-import { execSync } from "child_process";
+import { unlink, rm } from "fs/promises";
 
 const customTags: ScalarTag[] = [
     {
         tag: '!Ref',
-        resolve: v => ({Ref: v}),
+        resolve: v => ({ Ref: v }),
         stringify: (item) => stringify(item.value),
         default: false,
     },
@@ -35,7 +34,7 @@ const customTags: ScalarTag[] = [
         'Split',
     ].map(tagName => ({
         tag: `!${tagName}`,
-        resolve: (v: string) => ({[`Fn::${tagName}`]: v}),
+        resolve: (v: string) => ({ [`Fn::${tagName}`]: v }),
         stringify: (item: Scalar<unknown>) => stringify(item.value),
         default: false,
     })),
@@ -65,19 +64,19 @@ const deployStack = async (template: string, stackName: string, region: string, 
     const notificationsInput = notificationsTopic !== undefined ? ['--notification-arns', notificationsTopic] : [];
     const paramsInput = paramsMapToCmdParams(paramsMap);
     await spawnAsync(samCmd, [
-        'deploy', '--stack-name', stackName, '--region', region, '--template', template, 
-        '--capabilities', 'CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND', 
-        '--no-confirm-changeset', '--s3-bucket', s3Bucket, '--s3-prefix', `code/sam-artifacts/${stackName}`, 
+        'deploy', '--stack-name', stackName, '--region', region, '--template', template,
+        '--capabilities', 'CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND',
+        '--no-confirm-changeset', '--s3-bucket', s3Bucket, '--s3-prefix', `code/sam-artifacts/${stackName}`,
         rollbackInput, ...notificationsInput, ...paramsInput
     ]);
 }
 
 export const awsCache = async (): Promise<AWSCache> => {
-    if(!_awsCache) {
+    if (!_awsCache) {
         const ssm = new aws.SSM();
-        const { Parameter: topicParam } = await ssm.getParameter({Name: '/global/stack-notifications-topic-arn'}).promise();
-        const { Parameter: s3BucketParam } = await ssm.getParameter({Name: '/global/bucket-name'}).promise();
-        if(s3BucketParam?.Value === undefined) {
+        const { Parameter: topicParam } = await ssm.getParameter({ Name: '/global/stack-notifications-topic-arn' }).promise();
+        const { Parameter: s3BucketParam } = await ssm.getParameter({ Name: '/global/bucket-name' }).promise();
+        if (s3BucketParam?.Value === undefined) {
             throw new Error('missing S3 bucket - make sure to create the main stack; the bucket should be in the parameter store under /global/bucket-name')
         }
         _awsCache = {
@@ -90,7 +89,7 @@ export const awsCache = async (): Promise<AWSCache> => {
 
 export const awsDeployment = async (deploymentConfig: Deployment, config: Config) => {
     const cache = await awsCache();
-    if(deploymentConfig.preBuild !== undefined) {
+    if (deploymentConfig.preBuild !== undefined) {
         await spawnAsync('bash', ['-c', deploymentConfig.preBuild]);
     }
     const stackName = `${deploymentConfig.using}-${config.name}`;
@@ -100,9 +99,9 @@ export const awsDeployment = async (deploymentConfig: Deployment, config: Config
         const buildDir = `.aws-sam/build-${stackName}-${region}`;
         const finalTemplate = `${buildDir}/template.yaml`;
         try {
-            const template = validateTemplate(YAML.parse(await readFile(path.join(templateDir, `${deploymentConfig.using}.yml`), 'utf-8'), {customTags}));
+            const template = validateTemplate(YAML.parse(await readFile(path.join(templateDir, `${deploymentConfig.using}.yml`), 'utf-8'), { customTags }));
             const subbedTemplate = subInTemplate(template, deploymentConfig);
-            await writeFile(tempTemplate, YAML.stringify(subbedTemplate, {customTags}));
+            await writeFile(tempTemplate, YAML.stringify(subbedTemplate, { customTags }));
             const validParams = new Set(Object.keys(template.Parameters || {}));
             const params = Object.keys(deploymentConfig.parameters || {}).filter(k => validParams.has(k));
             const paramsMap = objectFromKeys(params, (k) => (deploymentConfig.parameters as Record<string, unknown>)[k]);
@@ -110,8 +109,9 @@ export const awsDeployment = async (deploymentConfig: Deployment, config: Config
             await deployStack(finalTemplate, stackName, region, cache.s3BucketName, paramsMap, cache.stackNotificationsTopicArn, deploymentConfig.disableRollback);
         } finally {
             Promise.all([
-                unlink(tempTemplate),
-            ]).catch(() => {});
+                rm(tempTemplate),
+                rm('.aws-sam', { recursive: true, force: true }),
+            ]).catch(() => { });
         }
     }));
 }

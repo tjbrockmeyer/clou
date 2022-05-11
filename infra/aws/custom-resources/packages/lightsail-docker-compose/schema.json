@@ -2,15 +2,11 @@
     "type": "object",
     "required": [
         "InstanceName",
-        "PrivateKey",
         "ComposeFile",
         "RoleArn"
     ],
     "properties": {
         "InstanceName": {
-            "type": "string"
-        },
-        "PrivateKey": {
             "type": "string"
         },
         "ComposeFile": {
@@ -26,7 +22,7 @@
         },
         "Serial": {
             "description": "increase this number to force a redeploy",
-            "type": "integer"
+            "type": ["integer", "string"]
         }
     }
 }

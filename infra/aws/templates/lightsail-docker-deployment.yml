@@ -19,8 +19,9 @@ Parameters:
       - prod
   LightsailInstance:
     Type: String
-  LightsailKeyParameter:
-    Type: AWS::SSM::Parameter::Value<String>
+  Serial:
+    Type: Number
+    Default: 0
 
 Resources:
   DockerCompose:
@@ -28,9 +29,8 @@ Resources:
     Properties:
       ServiceToken: !ImportValue cfn-custom-resource-lightsail-docker-compose
       InstanceName: !Ref LightsailInstance
-      PrivateKey: !Ref LightsailKeyParameter
       RoleArn: !GetAtt Role.Arn
-      Serial: 1
+      Serial: !Ref Serial
       ComposeFile: {}
   Role:
     Type: AWS::IAM::Role
@@ -46,19 +46,18 @@ Resources:
         - PolicyName: Inline
           PolicyDocument:
             Version: '2012-10-17'
-            Statement: []
+            Statement: 
+              - Effect: Deny
+                Action: '*'
+                Resource: '*'
         - PolicyName: Default
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Resource: 
-                  Fn::ImportValue: !Sub ${AppName}-${Env}-ecr-repo-arn
+                  Fn::ImportValue: !Sub ${AppName}-ecr-repo-arn
                 Action: 
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchGetImage
                   - ecr:BatchCheckLayerAvailability
-                  - ecr:PutImage
-                  - ecr:InitiateLayerUpload
-                  - ecr:UploadLayerPart
-                  - ecr:CompleteLayerUpload

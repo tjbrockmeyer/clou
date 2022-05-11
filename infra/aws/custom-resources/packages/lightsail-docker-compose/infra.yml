@@ -22,3 +22,8 @@ deployments:
             - lightsail:GetInstance
           Resource: 
             Fn::Sub: arn:aws:lightsail:*:${AWS::AccountId}:*
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+          Resource: 
+            Fn::Sub: arn:aws:ssm:*:${AWS::AccountId}:parameter/lightsail/*/private-key
