@@ -23,12 +23,18 @@ Resources:
       BundleId: nano_2_0
       UserData: |
         sudo yum update -y
+        sudo yum install -y jq git
 
-        # support for docker
-        sudo yum install -y jq
+        # docker
         sudo amazon-linux-extras install docker
         sudo service docker start
         sudo usermod -a -G docker ec2-user
+        # auto-start
+        sudo chkconfig docker on
+
+        # docker-compose
+        sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
 
         # support for certbot
         sudo wget -r --no-parent -A 'epel-release-*.rpm' https://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/
