@@ -9,7 +9,7 @@ Parameters:
 Metadata:
   Substitution:
     Policies: 
-      Path: Resources.Role.Policies[0].PolicyDocument
+      Path: Resources.Role.Properties.Policies[0].PolicyDocument
       At: Statement
 
 Outputs:

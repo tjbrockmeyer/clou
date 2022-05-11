@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "my-utils": "^1.0.0"
+    "my-utils": "^1.0.0",
+    "yaml": "^2.0.1"
   }
 }

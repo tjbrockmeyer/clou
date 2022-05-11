@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { customResource, success, getLightsailConnection, SSH } from 'my-utils';
+import * as YAML from 'yaml';
 
 const schema = JSON.parse(readFileSync('schema.json', 'utf-8'));
 const getFilepath = (dirname: string) => `${getDirPath(dirname)}/docker-compose.yml`;
@@ -24,6 +25,19 @@ const assumeRole = async (ssh: SSH, roleArn: string, instanceName: string): Prom
         const message = (error as Buffer).toString('utf-8');
         throw new Error(`failed to assume-role from inside the lightsail instance - assure that the role can be assumed by 'arn:aws:iam::*:user/lightsail/${instanceName}': ${message}`);
     }
+}
+
+const auditComposeFile = (contents: string): string => {
+    const awsCredsVolume = '~/.aws:/root/.aws:ro';
+    const composeFile = YAML.parse(contents) as Record<string, unknown>;
+    if(!composeFile.volumes) {
+        composeFile.volumes = [];
+    }
+    const volumes = composeFile.volumes as (string | {})[];
+    if(!volumes.some(v => v === awsCredsVolume)) {
+        volumes.push(awsCredsVolume);
+    }
+    return YAML.stringify(composeFile);
 }
 
 const putCredentials = async (ssh: SSH, instanceName: string, roleArn: string, profileName: string) => {
@@ -70,7 +84,7 @@ export const handler = customResource<Props, Data>({
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH;
         await assumeRole(ssh, props.RoleArn, props.InstanceName);
         await putCredentials(ssh, props.InstanceName, props.RoleArn, physicalId);
-        await composeUp(ssh, coerceFile(props.ComposeFile), physicalId);
+        await composeUp(ssh, auditComposeFile(coerceFile(props.ComposeFile)), physicalId);
         return success();
     },
     onUpdate: async (props, before, physicalId) => {
@@ -85,7 +99,7 @@ export const handler = customResource<Props, Data>({
             }
         }
         await putCredentials(ssh, props.InstanceName, props.RoleArn, physicalId);
-        await composeUp(ssh, coerceFile(props.ComposeFile), physicalId);
+        await composeUp(ssh, auditComposeFile(coerceFile(props.ComposeFile)), physicalId);
         return success();
     },
     onDelete: async (props, physicalId) => {

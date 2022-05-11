@@ -9,6 +9,10 @@ Outputs:
     Value: !GetAtt ECRRepo.Arn
     Export:
       Name: !Sub ${AppName}-ecr-repo-arn
+  ECRRepoUri:
+    Value: !GetAtt ECRRepo.RepositoryUri
+    Export:
+      Name: !Sub ${AppName}-ecr-repo-uri
 
 Resources:
   ECRRepo:
