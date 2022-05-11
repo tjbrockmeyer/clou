@@ -59,7 +59,7 @@ const composeUp = async (ssh: SSH, composeFile: string, dirname: string) => {
     await ssh.exec(`
 echo '${composeFile.replace(/'/g, "'\\''")}' > ${getFilepath(dirname)} &&
 cd ${getDirPath(dirname)} &&
-docker compose up -d`);
+docker-compose up -d`);
 }
 
 const composeDown = async (ssh: SSH, dirname: string) => {
