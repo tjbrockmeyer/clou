@@ -1,0 +1,2 @@
+MSYS_NO_PATHCONV=1 aws logs describe-log-streams --log-group-name '/aws/lambda/cfn-custom-resource-lightsail-docker-compose' --query 'sort_by(logStreams, &creationTime)[-1].logStreamName' --output text \
+ | MSYS_NO_PATHCONV=1 aws logs get-log-events --log-group-name '/aws/lambda/cfn-custom-resource-lightsail-docker-compose' --log-stream-name $(cat /dev/stdin) --query 'sort_by(events, &timestamp)[].message' --output text

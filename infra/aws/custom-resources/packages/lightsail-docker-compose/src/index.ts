@@ -19,6 +19,13 @@ interface RepoInfo {
     region: string;
 }
 
+/**
+ * TODO: 
+ *  auditComposeFile - needs to add the AWS_PROFILE environment variable
+ *  putCredentials/deleteCredentials - needs to add/remove the 'region' (first need to find where it comes into this function at)
+ */
+
+
 const getRepoInfo = (composeFileContent: string): RepoInfo => {
     const composeFile = YAML.parse(composeFileContent) as Record<string, unknown>;
     const repoInfos = Object.keys(composeFile.services as Record<string, unknown>).map(k => {
