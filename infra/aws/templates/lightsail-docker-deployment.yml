@@ -47,10 +47,10 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement: 
-              - Effect: Deny
-                Action: '*'
+              - Effect: Allow
+                Action: sts:GetCallerIdentity
                 Resource: '*'
-        - PolicyName: Default
+        - PolicyName: ECR-Default
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -61,3 +61,6 @@ Resources:
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchGetImage
                   - ecr:BatchCheckLayerAvailability
+              - Effect: Allow
+                Resource: '*'
+                Action: ecr:GetAuthorizationToken

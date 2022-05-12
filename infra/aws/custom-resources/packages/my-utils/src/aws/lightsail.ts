@@ -1,5 +1,4 @@
 import aws from 'aws-sdk';
-import SSH2 from 'ssh2-promise';
 import { SSH } from '../helper';
 
 const lightsail = new aws.Lightsail();
@@ -17,9 +16,9 @@ export const getLightsailConnection = async (instanceName: string, privateKey?: 
         privateKey = Parameter.Value
     }
     const {instance} = await lightsail.getInstance({instanceName}).promise();
-    return instance ? new SSH(new SSH2({
+    return instance ? new SSH({
         privateKey,
         host: instance.publicIpAddress,
         username: instance.username,
-    })) : undefined;
+    }) : undefined;
 };

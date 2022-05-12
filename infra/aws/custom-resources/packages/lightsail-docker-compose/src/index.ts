@@ -14,19 +14,43 @@ interface Props {
 
 interface Data { }
 
+interface RepoInfo {
+    url: string;
+    region: string;
+}
+
+const getRepoInfo = (composeFileContent: string): RepoInfo => {
+    const composeFile = YAML.parse(composeFileContent) as Record<string, unknown>;
+    const repoInfos = Object.keys(composeFile.services as Record<string, unknown>).map(k => {
+        const service = (composeFile.services as Record<string, unknown>)[k] as Record<string, unknown>;
+        const image = service.image as string;
+        if(image.includes('.dkr.ecr.') && image.includes('.amazonaws.com')) {
+            return {
+                url: image.split('/')[0],
+                region: image.split('/')[0].split('.')[3]
+            };
+        }
+        return undefined;
+    });
+    return repoInfos.filter(Boolean)[0] as Exclude<typeof repoInfos[0], undefined>;
+}
+
 const coerceFile = (file: string | Record<string, unknown>): string =>
     typeof file === 'string' ? file : JSON.stringify(file);
 
 const auditComposeFile = (contents: string): string => {
     const awsCredsVolume = '~/.aws:/root/.aws:ro';
     const composeFile = YAML.parse(contents) as Record<string, unknown>;
-    if(!composeFile.volumes) {
-        composeFile.volumes = [];
-    }
-    const volumes = composeFile.volumes as (string | {})[];
-    if(!volumes.some(v => v === awsCredsVolume)) {
-        volumes.push(awsCredsVolume);
-    }
+    Object.keys(composeFile.services as Record<string, unknown>).forEach(name => {
+        const service = (composeFile.services as Record<string, unknown>)[name] as Record<string, unknown>;
+        if(!service.volumes) {
+            service.volumes = [];
+        }
+        const volumes = service.volumes as (string | {})[];
+        if(!volumes.some(v => v === awsCredsVolume)) {
+            volumes.push(awsCredsVolume);
+        }
+    });
     return YAML.stringify(composeFile);
 }
 
@@ -54,20 +78,24 @@ aws configure set role_session_name '' --profile=${profileName}`);
 }
 
 const composeUp = async (ssh: SSH, composeFile: string, dirname: string) => {
-    await ssh.exec(`mkdir ${getDirPath()} || echo 'already exists'`);
-    await ssh.exec(`mkdir ${getDirPath(dirname)} || echo 'already exists'`);
+    const repoInfo = getRepoInfo(composeFile);
+    await ssh.exec(`mkdir ${getDirPath()} 2>&1 | cat`);
+    await ssh.exec(`mkdir ${getDirPath(dirname)} 2>&1 | cat`);
+    console.log(await ssh.exec(`AWS_PROFILE=${dirname} aws sts get-caller-identity 2>&1 | cat`));
     await ssh.exec(`
+AWS_PROFILE=${dirname} aws ecr get-login-password --region ${repoInfo.region} | \
+    docker login --username AWS --password-stdin ${repoInfo.url} 2>/dev/null &&
 echo '${composeFile.replace(/'/g, "'\\''")}' > ${getFilepath(dirname)} &&
 cd ${getDirPath(dirname)} &&
-docker-compose up -d`);
+docker-compose --log-level ERROR up -d 2>/dev/null`);
 }
 
 const composeDown = async (ssh: SSH, dirname: string) => {
-    await ssh.exec(`cd ${getDirPath(dirname)} && docker compose down`);
+    await ssh.exec(`cd ${getDirPath(dirname)} && docker-compose down 2>&1 | cat`);
 }
 
 const deleteDir = async (ssh: SSH, dirname: string) => {
-    await ssh.exec(`rm -rf ${getDirPath(dirname)} || echo 'already deleted'`);
+    await ssh.exec(`rm -rf ${getDirPath(dirname)} &>/dev/null || echo 'already deleted'`);
 }
 
 export const handler = customResource<Props, Data>({

@@ -90,6 +90,7 @@ export const awsCache = async (): Promise<AWSCache> => {
 export const awsDeployment = async (deploymentConfig: Deployment, config: Config) => {
     const cache = await awsCache();
     if (deploymentConfig.preBuild !== undefined) {
+        console.info(`running preBuild command: \`${deploymentConfig.preBuild}\``);
         await spawnAsync('bash', ['-c', deploymentConfig.preBuild]);
     }
     const stackName = `${deploymentConfig.using}-${config.name}`;
