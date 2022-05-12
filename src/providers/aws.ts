@@ -7,7 +7,7 @@ import { readFile, writeFile } from "fs/promises";
 import { randomInt } from "crypto";
 import { validateTemplate } from "../types/template";
 import { objectFromKeys, projectRoot, spawnAsync } from "../utils";
-import { unlink, rm } from "fs/promises";
+import { rm } from "fs/promises";
 
 const customTags: ScalarTag[] = [
     {
@@ -112,7 +112,7 @@ export const awsDeployment = async (deploymentConfig: Deployment, config: Config
             Promise.all([
                 rm(tempTemplate),
                 rm('.aws-sam', { recursive: true, force: true }),
-            ]).catch(() => { });
+            ]).catch(console.error);
         }
     }));
 }

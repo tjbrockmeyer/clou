@@ -15,7 +15,7 @@
     "ssh2-promise": "^1.0.2"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.93",
+    "@types/aws-lambda": "^8.10.97",
     "aws-sdk": "^2.1114.0"
   }
 }
