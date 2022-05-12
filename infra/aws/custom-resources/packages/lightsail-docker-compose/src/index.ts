@@ -106,7 +106,7 @@ export const handler = customResource<Props, Data>({
             return false;
         }
         const output = await ssh.exec(`[[ -f ${getFilepath(physicalId)} ]] && echo 'exists' || echo 'missing'`);
-        return output === 'exists';
+        return output.trim() === 'exists';
     },
     onCreate: async (props, physicalId) => {
         const ssh = await getLightsailConnection(props.InstanceName) as SSH;

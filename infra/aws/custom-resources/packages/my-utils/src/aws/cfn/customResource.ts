@@ -21,7 +21,9 @@ export const customResource = <TProps, TData>(opts: Options<TProps, TData>): Cfn
     const validator = new Validator<TProps>(opts.schema);
     return async (event: CloudFormationCustomResourceEvent, context: Context): Promise<void> => {
         const props = event.ResourceProperties;
-        const physicalResourceId = event.RequestType === 'Create' && validator.isValid(props) && opts.getPhysicalId ? await opts.getPhysicalId(props) : randomUUID();
+        const physicalResourceId = event.RequestType !== 'Create' ? event.PhysicalResourceId 
+            : validator.isValid(props) && opts.getPhysicalId ? await opts.getPhysicalId(props) 
+            : randomUUID();
         const send = createSender({ event, context, physicalResourceId });
         const validationResult = validator.getResult(props);
         if (event.RequestType !== 'Delete' && !validationResult.valid) {
