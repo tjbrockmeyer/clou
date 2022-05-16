@@ -10,7 +10,7 @@ interface Props {
     SecretAccessKey: string;
 }
 
-interface Data {}
+interface Data { }
 
 const setCreds = async (ssh: SSH, props: Props): Promise<Response<Data>> => {
     await ssh.exec(`\
@@ -27,17 +27,18 @@ aws configure set aws_secret_access_key '' --profile main`);
 
 export const handler = customResource<Props, Data>({
     schema,
+    getPhysicalId: (props) => props.InstanceName,
     resourceExists: async (props) => {
         const errText = `config profile (main) could not be found`;
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey);
-        if(!ssh) {
+        if (!ssh) {
             return false;
         }
         try {
             const output = await ssh.exec(`aws configure get aws_access_key_id --profile main &>/dev/stdout | cat /dev/stdin`);
             return !output.includes(errText) && output.trim() !== '';
-        } catch(error) {
-            if(error instanceof Error && error.message.includes(errText)) {
+        } catch (error) {
+            if (error instanceof Error && error.message.includes(errText)) {
                 return false;
             }
             throw error;
@@ -50,9 +51,9 @@ export const handler = customResource<Props, Data>({
     },
     onUpdate: async (props, before) => {
         const ssh = await getLightsailConnection(props.InstanceName, props.PrivateKey) as SSH;
-        if(before.InstanceName !== props.InstanceName) {
+        if (before.InstanceName !== props.InstanceName) {
             const beforeSsh = await getLightsailConnection(before.InstanceName, before.PrivateKey);
-            if(beforeSsh) {
+            if (beforeSsh) {
                 await deleteCreds(beforeSsh);
             }
         }

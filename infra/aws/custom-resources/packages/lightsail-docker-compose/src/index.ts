@@ -19,19 +19,12 @@ interface RepoInfo {
     region: string;
 }
 
-/**
- * TODO: 
- *  auditComposeFile - needs to add the AWS_PROFILE environment variable
- *  putCredentials/deleteCredentials - needs to add/remove the 'region' (first need to find where it comes into this function at)
- */
-
-
 const getRepoInfo = (composeFileContent: string): RepoInfo => {
     const composeFile = YAML.parse(composeFileContent) as Record<string, unknown>;
     const repoInfos = Object.keys(composeFile.services as Record<string, unknown>).map(k => {
         const service = (composeFile.services as Record<string, unknown>)[k] as Record<string, unknown>;
         const image = service.image as string;
-        if(image.includes('.dkr.ecr.') && image.includes('.amazonaws.com')) {
+        if (image.includes('.dkr.ecr.') && image.includes('.amazonaws.com')) {
             return {
                 url: image.split('/')[0],
                 region: image.split('/')[0].split('.')[3]
@@ -45,17 +38,28 @@ const getRepoInfo = (composeFileContent: string): RepoInfo => {
 const coerceFile = (file: string | Record<string, unknown>): string =>
     typeof file === 'string' ? file : JSON.stringify(file);
 
-const auditComposeFile = (contents: string): string => {
+const auditComposeFile = (contents: string, awsProfile: string, awsRegion: string): string => {
     const awsCredsVolume = '~/.aws:/root/.aws:ro';
     const composeFile = YAML.parse(contents) as Record<string, unknown>;
     Object.keys(composeFile.services as Record<string, unknown>).forEach(name => {
         const service = (composeFile.services as Record<string, unknown>)[name] as Record<string, unknown>;
-        if(!service.volumes) {
+        if (!service.volumes) {
             service.volumes = [];
         }
         const volumes = service.volumes as (string | {})[];
-        if(!volumes.some(v => v === awsCredsVolume)) {
+        if (!volumes.some(v => v === awsCredsVolume)) {
             volumes.push(awsCredsVolume);
+        }
+        if (!service.environment) {
+            service.environment = [];
+        }
+        const environment = service.environment as Record<string, string> | string[];
+        if (environment instanceof Array) {
+            environment.push(`AWS_REGION=${awsRegion}`);
+            environment.push(`AWS_PROFILE=${awsProfile}`);
+        } else {
+            environment.AWS_REGION = awsRegion;
+            environment.AWS_PROFILE = awsProfile;
         }
     });
     return YAML.stringify(composeFile);
@@ -107,7 +111,7 @@ const deleteDir = async (ssh: SSH, dirname: string) => {
 
 export const handler = customResource<Props, Data>({
     schema,
-    resourceExists: async (props, physicalId) => {
+    resourceExists: async (props, { physicalId }) => {
         const ssh = await getLightsailConnection(props.InstanceName);
         if (!ssh) {
             return false;
@@ -115,14 +119,14 @@ export const handler = customResource<Props, Data>({
         const output = await ssh.exec(`[[ -f ${getFilepath(physicalId)} ]] && echo 'exists' || echo 'missing'`);
         return output.trim() === 'exists';
     },
-    onCreate: async (props, physicalId) => {
+    onCreate: async (props, { physicalId, stackRegion }) => {
         const ssh = await getLightsailConnection(props.InstanceName) as SSH;
         await assumeRole(ssh, props.RoleArn, props.InstanceName);
         await putCredentials(ssh, props.InstanceName, props.RoleArn, physicalId);
-        await composeUp(ssh, auditComposeFile(coerceFile(props.ComposeFile)), physicalId);
+        await composeUp(ssh, auditComposeFile(coerceFile(props.ComposeFile), props.RoleArn, stackRegion), physicalId);
         return success();
     },
-    onUpdate: async (props, before, physicalId) => {
+    onUpdate: async (props, before, { physicalId, stackRegion }) => {
         const ssh = await getLightsailConnection(props.InstanceName) as SSH;
         await assumeRole(ssh, props.RoleArn, props.InstanceName);
         if (before.InstanceName !== props.InstanceName) {
@@ -134,14 +138,14 @@ export const handler = customResource<Props, Data>({
             }
         }
         await putCredentials(ssh, props.InstanceName, props.RoleArn, physicalId);
-        await composeUp(ssh, auditComposeFile(coerceFile(props.ComposeFile)), physicalId);
+        await composeUp(ssh, auditComposeFile(coerceFile(props.ComposeFile), props.RoleArn, stackRegion), physicalId);
         return success();
     },
-    onDelete: async (props, physicalId) => {
+    onDelete: async (props, { physicalId }) => {
         const ssh = await getLightsailConnection(props.InstanceName) as SSH;
         await deleteCredentials(ssh, physicalId);
         await composeDown(ssh, physicalId);
         await deleteDir(ssh, physicalId);
         return success();
     },
-})
+});
