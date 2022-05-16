@@ -1,4 +1,4 @@
-import { CloudFormationCustomResourceEvent, Context } from "aws-lambda";
+import type { CloudFormationCustomResourceEvent, Context } from "aws-lambda";
 import { createSender, Response, failed, success } from "./response";
 import { Validator, Schema } from "../../helper";
 import { randomUUID } from "crypto";
@@ -29,7 +29,7 @@ export const customResource = <TProps, TData>(opts: Options<TProps, TData>): Cfn
         const props = event.ResourceProperties;
         const physicalResourceId = opts.getPhysicalId && validator.isValid(props) ? await opts.getPhysicalId(props, event)
             : event.RequestType !== 'Create' ? event.PhysicalResourceId
-                : randomUUID();
+            : randomUUID();
         console.info(event.RequestType, event.ResourceType, physicalResourceId);
         const customEvent: Event = {
             physicalId: physicalResourceId,
