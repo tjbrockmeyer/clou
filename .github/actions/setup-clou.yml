@@ -1,0 +1,20 @@
+name: Setup clou
+description: Setup the clou binary
+inputs: 
+  version:
+    description: version of the clou binary to use
+    required: true
+    default: v1.0.0
+outputs: {}
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        VERSION="${{ inputs.version }}"
+        THIS_OS="$([[ $RUNNER_OS = "Linux" ]] && printf "linux" || [[ $RUNNER_OS = "macOS" ]] && printf "macos" || [[ $RUNNER_OS = "Windows" ]] && printf "win.exe" || "")"
+        if [[ -z $THIS_OS ]]; then 
+          echo "OS is unsupported: $RUNNER_OS" >&2
+          exit 1
+        fi
+        curl -so /usr/bin/clou https://github.com/tjbrockmeyer/clou/releases/download/$VERSION/clou-$FOR_OS

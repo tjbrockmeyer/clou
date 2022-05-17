@@ -57,6 +57,7 @@ jobs:
     steps:
       - uses: frenck/action-setup-yq@v1
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-clou
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1

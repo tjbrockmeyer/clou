@@ -117,6 +117,7 @@ jobs:
     steps:
       - uses: frenck/action-setup-yq@v1
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-clou
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1
@@ -143,7 +144,7 @@ jobs:
           python-version: ${{ steps.getRuntime.outputs.version }}
       - name: Deploy Infrastructure
         run: |
-          ./aws/bin/infra -c "${{ env.BASE_PATH }}/${{ matrix.package }}/infra.yml"
+          clou -c "${{ env.BASE_PATH }}/${{ matrix.package }}/infra.yml"
   
   deleteInfra:
     if: needs.getPackages.outputs.hasDeletedPackages == 'true'
@@ -161,6 +162,7 @@ jobs:
     steps:
       - uses: frenck/action-setup-yq@v1
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-clou
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1
