@@ -2,7 +2,7 @@ name: Publish Release
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
 
 env:
   ROLE: arn:aws:iam::060868188835:role/infra-github-runner
@@ -17,8 +17,7 @@ jobs:
         run: |
           npm ci
           npm run compile
-      - uses: svenstaro/upload-release-action@2.2.1
+      - uses: uses: ncipollo/release-action@v1.10.0
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file_glob: targets/*
-          tag: ${{ steps.previousTag.outputs.tag }}
+          artifacts: targets/clou-*
+          token: ${{ secrets.GITHUB_TOKEN }}
