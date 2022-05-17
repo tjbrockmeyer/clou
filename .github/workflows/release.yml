@@ -4,9 +4,6 @@ on:
     tags:
       - 'v*'
 
-env:
-  ROLE: arn:aws:iam::060868188835:role/infra-github-runner
-
 jobs:
   build:
     name: Publish Binaries
@@ -17,7 +14,7 @@ jobs:
         run: |
           npm ci
           npm run compile
-      - uses: uses: ncipollo/release-action@v1.10.0
+      - uses: ncipollo/release-action@v1.10.0
         with:
           artifacts: targets/clou-*
           token: ${{ secrets.GITHUB_TOKEN }}
