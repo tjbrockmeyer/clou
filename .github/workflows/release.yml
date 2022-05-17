@@ -1,0 +1,21 @@
+name: Publish Release
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  ROLE: arn:aws:iam::060868188835:role/infra-github-runner
+
+jobs:
+  build:
+    name: Publish Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm run compile
+      - uses: svenstaro/upload-release-action@2.2.1
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file_glob: targets/*
+          tag: ${{ steps.previousTag.outputs.tag }}

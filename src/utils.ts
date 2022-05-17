@@ -38,5 +38,3 @@ export const typeValidator = <T extends Record<string, unknown>>(schema: Schema)
 export const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null;
 export const isArray = (x: unknown): x is unknown[] => x instanceof Array;
 export const isString = (x: unknown): x is string => typeof x === 'string';
-
-export const projectRoot = path.resolve(path.dirname(__dirname));

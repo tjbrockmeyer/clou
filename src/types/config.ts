@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import path from "path";
-import { projectRoot, typeValidator } from "../utils";
+import { typeValidator } from "../utils";
 
 export type Config = {
   version: string;
@@ -21,4 +21,4 @@ export type Deployment = {
   };
 }
 
-export const validateConfig = typeValidator<Config>(JSON.parse(readFileSync(path.join(projectRoot, 'schemas/config.json'), 'utf-8')));
+export const validateConfig = typeValidator<Config>(JSON.parse(readFileSync(path.join(__dirname, '../../schemas/config.json'), 'utf-8')));

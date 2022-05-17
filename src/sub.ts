@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { search } from "jmespath";
-import { Config, Deployment } from "./types/config";
+import { Deployment } from "./types/config";
 import { Template } from "./types/template";
 import { isArray, isObject, isString, mapKeys } from './utils';
 

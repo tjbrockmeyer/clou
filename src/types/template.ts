@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import path from "path";
-import { projectRoot, typeValidator } from "../utils";
+import { typeValidator } from "../utils";
 
 type TemplateSubstitution = {
     /** jmespath spec to an object or array */
@@ -21,4 +21,4 @@ export type Template = {
     };
 }
 
-export const validateTemplate = typeValidator<Template>(JSON.parse(readFileSync(path.join(projectRoot, 'schemas/template.json'), 'utf-8')));
+export const validateTemplate = typeValidator<Template>(JSON.parse(readFileSync(path.join(__dirname, '../../schemas/template.json'), 'utf-8')));

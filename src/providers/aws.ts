@@ -6,7 +6,7 @@ import YAML, { Scalar, ScalarTag, stringify } from 'yaml';
 import { readFile, writeFile } from "fs/promises";
 import { randomInt } from "crypto";
 import { validateTemplate } from "../types/template";
-import { objectFromKeys, projectRoot, spawnAsync } from "../utils";
+import { objectFromKeys, spawnAsync } from "../utils";
 import { rm } from "fs/promises";
 
 const customTags: ScalarTag[] = [
@@ -45,7 +45,7 @@ type AWSCache = {
     s3BucketName: string;
 }
 
-const templateDir = path.join(projectRoot, 'infra/aws/templates');
+const templateDir = path.join(__dirname, '../../infra/aws/templates');
 let _awsCache: AWSCache;
 
 const paramsMapToCmdParams = (paramsMap: Record<string, unknown>): string[] => {

@@ -63,4 +63,4 @@ jobs:
           role-to-assume: ${{ env.ROLE }}
       - name: Rotate Access Key for ${{ matrix.fileName }}
         run: |
-          ./aws/bin/infra -c "${{ env.BASE_DIR }}/${{ matrix.fileName }}"
+          clou -c "${{ env.BASE_DIR }}/${{ matrix.fileName }}"
