@@ -6,6 +6,12 @@
     "properties": {
         "InstanceName": {
             "type": "string"
+        },
+        "AccessKeyRef": {
+            "type": "string"
+        },
+        "PrivateKeyRef": {
+            "type": "string"
         }
     }
 }

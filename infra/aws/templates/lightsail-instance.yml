@@ -93,9 +93,9 @@ Resources:
   InstanceUser:
     DependsOn: 
       - StaticIp
-      - AccessKeyParameter
-      - InstanceKeyPairParam
     Type: Custom::LightsailUser
     Properties:
       ServiceToken: !ImportValue cfn-custom-resource-lightsail-user
       InstanceName: !Ref Instance
+      PrivateKeyRef: !Ref InstanceKeyPair
+      AccessKeyRef: !Ref AccessKey

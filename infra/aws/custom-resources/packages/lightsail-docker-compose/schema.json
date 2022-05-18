@@ -23,6 +23,9 @@
         "Serial": {
             "description": "increase this number to force a redeploy",
             "type": ["integer", "string"]
+        },
+        "PrivateKeyRef": {
+            "type": "string"
         }
     }
 }
