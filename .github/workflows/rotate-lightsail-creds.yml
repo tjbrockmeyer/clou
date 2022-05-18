@@ -36,7 +36,8 @@ jobs:
                   yq -i ".deployments.$DEPLOYMENT.parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
               fi
             done <<< "$(yq '.deployments | keys | .[]' < "$FILE")"
-            LIST+="$PREFIX$DEPLOYMENTS$POSTFIX"
+            DEPLOYMENTS="[$(cut -c2- <<< "$DEPLOYMENTS")]"
+            LIST+=",$PREFIX$DEPLOYMENTS$POSTFIX"
           done
           LIST="[$(cut -c2- <<< "$LIST")]"
           echo "$LIST"
