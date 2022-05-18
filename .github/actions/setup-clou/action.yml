@@ -3,16 +3,26 @@ description: Setup the clou binary
 inputs: 
   version:
     description: version of the clou binary to use
-    required: true
-    default: v1.0.0
+    default: "latest"
 outputs: {}
 runs:
   using: composite
   steps:
-    - name: Download and Install clou
+    - id: getVersion
       shell: bash
       run: |
-        VERSION="${{ inputs.version }}"
+        VERSION="v$( echo ${{ inputs.version }} | sed s/^v//)"
+        if [[ "${{ inputs.version }}" == "latest" ]]; then
+          VERSION=$(curl -s https://api.github.com/repos/tjbrockmeyer/clou/releases/latest | jq -r '.tag_name')
+        fi
+        if [[ "$VERSION" == "null" ]]; then
+          exit 1;
+        fi
+        echo "::set-output name=version::$VERSION"
+    - shell: bash
+      run: |
+        echo "installing clou"
+        VERSION="${{ steps.getVersion.outputs.version }}"
         if [[ "$RUNNER_OS" = "Linux" ]]; then
           EXECUTABLE="clou-linux"
         elif [[ "$RUNNER_OS" = "macOS" ]]; then
