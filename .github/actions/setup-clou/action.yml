@@ -9,7 +9,8 @@ outputs: {}
 runs:
   using: composite
   steps:
-    - shell: bash
+    - name: Download and Install clou
+      shell: bash
       run: |
         VERSION="${{ inputs.version }}"
         THIS_OS="$([[ $RUNNER_OS = "Linux" ]] && printf "linux" || [[ $RUNNER_OS = "macOS" ]] && printf "macos" || [[ $RUNNER_OS = "Windows" ]] && printf "win.exe" || "")"
@@ -17,4 +18,4 @@ runs:
           echo "OS is unsupported: $RUNNER_OS" >&2
           exit 1
         fi
-        curl -so /usr/bin/clou https://github.com/tjbrockmeyer/clou/releases/download/$VERSION/clou-$FOR_OS
+        curl -so /usr/bin/clou https://github.com/tjbrockmeyer/clou/releases/download/$VERSION/clou-$THIS_OS
