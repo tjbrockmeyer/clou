@@ -27,11 +27,11 @@ jobs:
             DEPLOYMENTS=""
             while read DEPLOYMENT; do
               if [[ "$(yq ".deployments.$DEPLOYMENT.using" < "$FILE")" = lightsail-instance ]]; then
-                  COMMAND="clou deploy -c \\\"$FILE\\\""
-                  DEPLOYMENTS+=" \\\"$DEPLOYMENT\\\""
-                  SERIAL="$(yq '.deployments.$DEPLOYMENT.parameters.AccessKeySerial' < "$FILE")"
-                  NEXT_SERIAL="$(( "$SERIAL" + 1 ))"
-                  yq -i ".deployments.$DEPLOYMENT.parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
+                COMMAND="clou deploy -c \\\"$FILE\\\""
+                DEPLOYMENTS+=" \\\"$DEPLOYMENT\\\""
+                SERIAL="$(yq '.deployments.$DEPLOYMENT.parameters.AccessKeySerial' < "$FILE")"
+                NEXT_SERIAL="$(( "$SERIAL" + 1 ))"
+                yq -i ".deployments.$DEPLOYMENT.parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
               fi
             done <<< "$(yq '.deployments | keys | .[]' < "$FILE")"
             if [[ -n $COMMAND ]]; then
