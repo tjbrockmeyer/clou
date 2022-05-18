@@ -13,8 +13,13 @@ runs:
       shell: bash
       run: |
         VERSION="${{ inputs.version }}"
-        EXECUTABLE="$([[ $RUNNER_OS = "Linux" ]] && printf "clou-linux" || [[ $RUNNER_OS = "macOS" ]] && printf "clou-macos" || [[ $RUNNER_OS = "Windows" ]] && printf "clou-win.exe" || "")"
-        if [[ -z $EXECUTABLE ]]; then 
+        if [[ "$RUNNER_OS" = "Linux" ]]; then
+          EXECUTABLE="clou-linux"
+        elif [[ "$RUNNER_OS" = "macOS" ]]; then
+          EXECUTABLE="clou-macos"
+        elif [[ "$RUNNER_OS" = "Windows" ]]; then
+          EXECUTABLE="clou-win.exe"
+        else
           echo "OS is unsupported: $RUNNER_OS" >&2
           exit 1
         fi
@@ -24,7 +29,7 @@ runs:
         fi
         mkdir "$(dirname "$OUT")"
         URL="https://github.com/tjbrockmeyer/clou/releases/download/$VERSION/$EXECUTABLE"
-        echo Installing clou from https://github.com/tjbrockmeyer/clou/releases/download/$VERSION/$EXECUTABLE to $OUT
+        echo Installing clou from $URL to $OUT
         curl -L -o "$OUT" "$URL"
         if [[ "$RUNNER_OS" != "Windows" ]]; then
           chmod +x "$OUT"
