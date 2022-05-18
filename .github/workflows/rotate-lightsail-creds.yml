@@ -28,8 +28,8 @@ jobs:
             POSTFIX=""
             while read DEPLOYMENT; do
               if [[ "$(yq ".deployments.$DEPLOYMENT.using" < "$FILE")" = lightsail-instance ]]; then
-                  PREFIX="-c \\\\\"$FILE\\\\\""
-                  DEPLOYMENTS+=" \\\\\"$DEPLOYMENT\\\\\""
+                  PREFIX="-c $FILE"
+                  DEPLOYMENTS+=" $DEPLOYMENT"
                   SERIAL="$(yq '.deployments.$DEPLOYMENT.parameters.AccessKeySerial' < "$FILE")"
                   NEXT_SERIAL="$(( "$SERIAL" + 1 ))"
                   yq -i ".deployments.$DEPLOYMENT.parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
