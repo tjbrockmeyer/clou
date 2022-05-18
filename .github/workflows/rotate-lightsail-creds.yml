@@ -28,8 +28,8 @@ jobs:
             POSTFIX=""
             while read DEPLOYMENT; do
               if [[ "$(yq ".deployments.$DEPLOYMENT.using" < "$FILE")" = lightsail-instance ]]; then
-                  PREFIX="{\"file\":\"$FILE\",\"deployments\":"
-                  DEPLOYMENTS+=",\"$DEPLOYMENT\""
+                  PREFIX="{\\\"file\\\":\\\"$FILE\",\\\"deployments\\\":"
+                  DEPLOYMENTS+=",\\\"$DEPLOYMENT\\\""
                   POSTFIX="}"
                   SERIAL="$(yq '.deployments.$DEPLOYMENT.parameters.AccessKeySerial' < "$FILE")"
                   NEXT_SERIAL="$(( "$SERIAL" + 1 ))"
@@ -37,7 +37,7 @@ jobs:
               fi
             done <<< "$(yq '.deployments | keys | .[]' < "$FILE")"
             DEPLOYMENTS="[$(cut -c2- <<< "$DEPLOYMENTS")]"
-            LIST+=",$PREFIX$DEPLOYMENTS$POSTFIX"
+            LIST+=",\"$PREFIX$DEPLOYMENTS$POSTFIX\""
           done
           LIST="[$(cut -c2- <<< "$LIST")]"
           printf "$LIST\n"
@@ -71,6 +71,8 @@ jobs:
         with:
           aws-region: us-east-1
           role-to-assume: ${{ env.ROLE }}
-      - name: Rotate Access Key for ${{ matrix.fileName }}
+      - name: Rotate Access Key for ${{ matrix.data }}
         run: |
-          clou -c "${{ env.BASE_DIR }}/${{ matrix.fileName }}"
+          FILE="$(yq '.file' <<< "${{ matrix.data }}")"
+          STACKS="$(yq '.deployments | join(" ")' <<< "${{ matrix.data }}")"
+          clou -c "${{ env.BASE_DIR }}/${{ matrix.data }}"
