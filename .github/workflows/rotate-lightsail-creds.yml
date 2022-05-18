@@ -23,17 +23,25 @@ jobs:
           cd "${{ env.BASE_DIR }}"
           LIST=
           for FILE in *; do
-          if [[ "$(yq '.Template' < "$FILE")" = lightsail-instance ]]; then
-              LIST+=",\"$FILE\""
-              SERIAL="$(yq '.Parameters.AccessKeySerial' < "$FILE")"
-              NEXT_SERIAL="$(( "$SERIAL" + 1 ))"
-              yq -i ".Parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
-          fi
+            PREFIX=""
+            DEPLOYMENTS=""
+            POSTFIX=""
+            while read DEPLOYMENT; do
+              if [[ "$(yq ".deployments.$DEPLOYMENT.using" < "$FILE")" = lightsail-instance ]]; then
+                  PREFIX="{\"file\":\"$FILE\",\"deployments\":["
+                  DEPLOYMENTS+=",\"$DEPLOYMENT\""
+                  POSTFIX="]}"
+                  SERIAL="$(yq '.deployments.$DEPLOYMENT.parameters.AccessKeySerial' < "$FILE")"
+                  NEXT_SERIAL="$(( "$SERIAL" + 1 ))"
+                  yq -i ".deployments.$DEPLOYMENT.parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
+              fi
+            done <<< "$(yq '.deployments | keys | .[]' < "$FILE")"
+            LIST+="$PREFIX$DEPLOYMENTS$POSTFIX"
           done
           LIST="[$(cut -c2- <<< "$LIST")]"
           echo "$LIST"
           echo "::set-output name=hasFiles::$([[ "$LIST" = '[]' ]] && echo false || echo true)"
-          echo "::set-output name=fileNames::$(echo "$LIST")"
+          echo "::set-output name=data::$(echo "$LIST")"
       - uses: EndBug/add-and-commit@v9.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -50,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        fileName: ${{ fromJSON(needs.updateFiles.outputs.fileNames) }}
+        data: ${{ fromJSON(needs.updateFiles.outputs.data) }}
     permissions:
       id-token: write
       contents: read
