@@ -28,9 +28,9 @@ jobs:
             POSTFIX=""
             while read DEPLOYMENT; do
               if [[ "$(yq ".deployments.$DEPLOYMENT.using" < "$FILE")" = lightsail-instance ]]; then
-                  PREFIX="\{\"file\":\"$FILE\",\"deployments\":["
+                  PREFIX="{\"file\":\"$FILE\",\"deployments\":"
                   DEPLOYMENTS+=",\"$DEPLOYMENT\""
-                  POSTFIX="]}"
+                  POSTFIX="}"
                   SERIAL="$(yq '.deployments.$DEPLOYMENT.parameters.AccessKeySerial' < "$FILE")"
                   NEXT_SERIAL="$(( "$SERIAL" + 1 ))"
                   yq -i ".deployments.$DEPLOYMENT.parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
@@ -40,7 +40,7 @@ jobs:
             LIST+=",$PREFIX$DEPLOYMENTS$POSTFIX"
           done
           LIST="[$(cut -c2- <<< "$LIST")]"
-          echo "$LIST"
+          printf "$LIST\n"
           echo "::set-output name=hasFiles::$([[ "$LIST" = '[]' ]] && echo false || echo true)"
           echo "::set-output name=data::$(echo "$LIST")"
       - uses: EndBug/add-and-commit@v9.0.0
