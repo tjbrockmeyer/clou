@@ -13,9 +13,18 @@ runs:
       shell: bash
       run: |
         VERSION="${{ inputs.version }}"
-        THIS_OS="$([[ $RUNNER_OS = "Linux" ]] && printf "linux" || [[ $RUNNER_OS = "macOS" ]] && printf "macos" || [[ $RUNNER_OS = "Windows" ]] && printf "win.exe" || "")"
-        if [[ -z $THIS_OS ]]; then 
+        EXECUTABLE="$([[ $RUNNER_OS = "Linux" ]] && printf "clou-linux" || [[ $RUNNER_OS = "macOS" ]] && printf "clou-macos" || [[ $RUNNER_OS = "Windows" ]] && printf "clou-win.exe" || "")"
+        if [[ -z $EXECUTABLE ]]; then 
           echo "OS is unsupported: $RUNNER_OS" >&2
           exit 1
         fi
-        curl -so /usr/bin/clou https://github.com/tjbrockmeyer/clou/releases/download/$VERSION/clou-$THIS_OS
+        OUT="$RUNNER_TEMP/clou/clou"
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          dest="${dest}.exe"
+        fi
+        mkdir "$(dirname "$OUT")"
+        curl -L -o "$OUT"  https://github.com/tjbrockmeyer/clou/releases/download/$VERSION/$EXECUTABLE
+        if [[ "$RUNNER_OS" != "Windows" ]]; then
+          chmod +x "$OUT"
+        fi
+        echo "$(dirname "$OUT")" >> $GITHUB_PATH
