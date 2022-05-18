@@ -28,7 +28,7 @@ jobs:
             POSTFIX=""
             while read DEPLOYMENT; do
               if [[ "$(yq ".deployments.$DEPLOYMENT.using" < "$FILE")" = lightsail-instance ]]; then
-                  PREFIX="{\"file\":\"$FILE\",\"deployments\":["
+                  PREFIX="\{\"file\":\"$FILE\",\"deployments\":["
                   DEPLOYMENTS+=",\"$DEPLOYMENT\""
                   POSTFIX="]}"
                   SERIAL="$(yq '.deployments.$DEPLOYMENT.parameters.AccessKeySerial' < "$FILE")"
