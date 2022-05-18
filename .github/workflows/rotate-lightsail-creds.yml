@@ -65,6 +65,8 @@ jobs:
     steps:
       - uses: frenck/action-setup-yq@v1
       - uses: actions/checkout@v3
+        with:
+          ref: master
       - uses: ./.github/actions/setup-clou
       - uses: aws-actions/configure-aws-credentials@v1
         with:
