@@ -3,7 +3,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   Repo:
     Type: String
-    Default: tjbrockmeyer/infra
+    Default: tjbrockmeyer/clou
 
 Outputs:
   GithubOidcOut:

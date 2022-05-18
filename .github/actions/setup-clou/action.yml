@@ -23,7 +23,9 @@ runs:
           dest="${dest}.exe"
         fi
         mkdir "$(dirname "$OUT")"
-        curl -L -o "$OUT"  https://github.com/tjbrockmeyer/clou/releases/download/$VERSION/$EXECUTABLE
+        URL="https://github.com/tjbrockmeyer/clou/releases/download/$VERSION/$EXECUTABLE"
+        echo Installing clou from https://github.com/tjbrockmeyer/clou/releases/download/$VERSION/$EXECUTABLE to $OUT
+        curl -L -o "$OUT" "$URL"
         if [[ "$RUNNER_OS" != "Windows" ]]; then
           chmod +x "$OUT"
         fi
