@@ -38,7 +38,8 @@
   "bin": {
     "clou": "./dist/cli/index.js",
     "sshls": "./infra/aws/bin/sshls",
-    "scpls": "./infra/aws/bin/scpls"
+    "scpls": "./infra/aws/bin/scpls",
+    "awslogs": "./infra/aws/bin/awslogs"
   },
   "pkg": {
     "scripts": "dist/**/*.js",

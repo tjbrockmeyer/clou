@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aws-sdk": "^2.1137.0",
     "my-utils": "^1.0.0"
   }
 }

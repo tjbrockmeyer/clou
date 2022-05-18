@@ -1,2 +1,25 @@
-MSYS_NO_PATHCONV=1 aws logs describe-log-streams --log-group-name '/aws/lambda/cfn-custom-resource-lightsail-docker-compose' --query 'sort_by(logStreams, &creationTime)[-1].logStreamName' --output text \
- | MSYS_NO_PATHCONV=1 aws logs get-log-events --log-group-name '/aws/lambda/cfn-custom-resource-lightsail-docker-compose' --log-stream-name $(cat /dev/stdin) --query 'sort_by(events, &timestamp)[].message' --output text
+LOG_GROUP_NAME="$1"
+INDEX=1
+
+get_log_stream() {
+    LOG_STREAM="$(MSYS_NO_PATHCONV=1 aws logs describe-log-streams --log-group-name "/$LOG_GROUP_NAME" --query "sort_by(logStreams, &creationTime)[-$INDEX].logStreamName" --output text)"
+}
+
+clear
+get_log_stream
+while true; do
+    printf "logStream: $LOG_STREAM\nindex: $INDEX\nl: view\nj: newer\nk: older\nq: quit\n>"
+    read -p "" -n1 INPUT
+    clear
+    if [[ $INPUT = l ]]; then
+        MSYS_NO_PATHCONV=1 aws logs get-log-events --log-group-name "/$LOG_GROUP_NAME" --log-stream-name "$LOG_STREAM" --query 'sort_by(events, &timestamp)[].message' --output text | less
+    elif [[ $INPUT = j ]] && [[ $INDEX != 1 ]]; then
+        INDEX=$(( $INDEX - 1 ))
+        get_log_stream
+    elif [[ $INPUT = k ]] && [[ $INDEX != 10 ]]; then
+        INDEX=$(( $INDEX + 1 ))
+        get_log_stream
+    elif [[ $INPUT = q ]]; then
+        exit 0
+    fi
+done

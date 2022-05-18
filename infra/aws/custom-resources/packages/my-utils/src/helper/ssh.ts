@@ -1,4 +1,3 @@
-import EventEmitter from "events";
 import { Client, ConnectConfig } from "ssh2";
 
 export class SSH {
