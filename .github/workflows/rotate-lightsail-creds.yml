@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       hasFiles: ${{ steps.updateFiles.outputs.hasFiles }}
-      fileNames: ${{ steps.updateFiles.outputs.fileNames  }}
+      command: ${{ steps.updateFiles.outputs.command  }}
     steps:
       - uses: frenck/action-setup-yq@v1
       - uses: actions/checkout@v3
@@ -25,22 +25,23 @@ jobs:
           for FILE in *; do
             PREFIX=""
             DEPLOYMENTS=""
-            POSTFIX=""
             while read DEPLOYMENT; do
               if [[ "$(yq ".deployments.$DEPLOYMENT.using" < "$FILE")" = lightsail-instance ]]; then
-                  PREFIX="-c $FILE"
-                  DEPLOYMENTS+=" $DEPLOYMENT"
+                  PREFIX="-c \\\"$FILE\\\""
+                  DEPLOYMENTS+=" \\\"$DEPLOYMENT\\\""
                   SERIAL="$(yq '.deployments.$DEPLOYMENT.parameters.AccessKeySerial' < "$FILE")"
                   NEXT_SERIAL="$(( "$SERIAL" + 1 ))"
                   yq -i ".deployments.$DEPLOYMENT.parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
               fi
             done <<< "$(yq '.deployments | keys | .[]' < "$FILE")"
-            LIST+=",\"$PREFIX$DEPLOYMENTS\""
+            if [[ -n $PREFIX ]]; then
+              LIST+=",\"$PREFIX$DEPLOYMENTS\""
+            fi
           done
           LIST="[$(cut -c2- <<< "$LIST")]"
           printf "$LIST\n"
           echo "::set-output name=hasFiles::$([[ "$LIST" = '[]' ]] && echo false || echo true)"
-          echo "::set-output name=arguments::$(echo "$LIST")"
+          echo "::set-output name=command::$(echo "$LIST")"
       - uses: EndBug/add-and-commit@v9.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -57,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arguments: ${{ fromJSON(needs.updateFiles.outputs.arguments) }}
+        command: ${{ fromJSON(needs.updateFiles.outputs.command) }}
     permissions:
       id-token: write
       contents: read
@@ -69,9 +70,7 @@ jobs:
         with:
           aws-region: us-east-1
           role-to-assume: ${{ env.ROLE }}
-      - name: Rotate Access Key for ${{ matrix.data }}
+      - name: Run ${{ matrix.command }}
         run: |
-          FILE="$(yq '.file' <<< "${{ matrix.data }}")"
-          STACKS="$(yq '.deployments | join(" ")' <<< "${{ matrix.data }}")"
           cd "${{ env.BASE_DIR }}"
-          clou ${{ matrix.arguments }}
+          ${{ matrix.command }}
