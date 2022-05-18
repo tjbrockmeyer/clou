@@ -23,7 +23,7 @@ jobs:
           cd "${{ env.BASE_DIR }}"
           LIST=
           for FILE in *; do
-            PREFIX=""
+            COMMAND=""
             DEPLOYMENTS=""
             while read DEPLOYMENT; do
               if [[ "$(yq ".deployments.$DEPLOYMENT.using" < "$FILE")" = lightsail-instance ]]; then
@@ -34,7 +34,7 @@ jobs:
                   yq -i ".deployments.$DEPLOYMENT.parameters.AccessKeySerial = $NEXT_SERIAL" "$FILE"
               fi
             done <<< "$(yq '.deployments | keys | .[]' < "$FILE")"
-            if [[ -n $PREFIX ]]; then
+            if [[ -n $COMMAND ]]; then
               LIST+=",\"$COMMAND$DEPLOYMENTS\""
             fi
           done
