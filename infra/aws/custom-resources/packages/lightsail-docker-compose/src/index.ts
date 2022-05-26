@@ -124,7 +124,7 @@ export const handler = customResource<Props, Data>({
         const ssh = await getLightsailConnection(props.InstanceName) as SSH;
         await assumeRole(ssh, props.RoleArn, props.InstanceName);
         await putCredentials(ssh, props.InstanceName, props.RoleArn, physicalId);
-        await composeUp(ssh, auditComposeFile(coerceFile(props.ComposeFile), props.RoleArn, stackRegion), physicalId);
+        await composeUp(ssh, auditComposeFile(coerceFile(props.ComposeFile), physicalId, stackRegion), physicalId);
         return success();
     },
     onUpdate: async (props, before, { physicalId, stackRegion }) => {
@@ -139,7 +139,7 @@ export const handler = customResource<Props, Data>({
             }
         }
         await putCredentials(ssh, props.InstanceName, props.RoleArn, physicalId);
-        await composeUp(ssh, auditComposeFile(coerceFile(props.ComposeFile), props.RoleArn, stackRegion), physicalId);
+        await composeUp(ssh, auditComposeFile(coerceFile(props.ComposeFile), physicalId, stackRegion), physicalId);
         return success();
     },
     onDelete: async (props, { physicalId }) => {
