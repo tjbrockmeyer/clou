@@ -9,4 +9,4 @@ deployments:
       - us-east-1
     parameters:
       Name: '{{ ref name }}'
-      AccessKeySerial: 66
+      AccessKeySerial: 67
