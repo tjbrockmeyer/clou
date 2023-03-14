@@ -1,0 +1,20 @@
+version: master
+name: teabee
+default: 
+  - droneServer
+  - droneWorker
+deployments:
+  droneServer:
+    provider: awsc
+    using: lightsail-instance
+    regions: [us-east-1]
+    parameters:
+      Name: '{{ ref name }}'
+      AccessKeySerial: 0
+  droneWorker:
+    provider: aws
+    using: lightsail-instance
+    regions: [us-east-1]
+    parameters:
+      Name: '{{ ref name }}'
+      AccessKeySerial: 0

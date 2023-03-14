@@ -1,7 +1,7 @@
 import { stat, readFile } from "fs/promises";
 import { dirname } from "path";
 import YAML from "yaml";
-import { processConfig } from "..";
+import { processConfig } from "../actions/deploy";
 import { ParseResult, Command, throwParseError } from "../climb";
 import { validateConfig } from "../types/config";
 

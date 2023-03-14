@@ -1,6 +1,6 @@
-import { awsCache, awsDeployment } from "./providers/aws";
-import { subAllExprs } from "./sub";
-import { Config } from "./types/config";
+import { awsCache, awsDeployment } from "../providers/aws";
+import { subAllExprs } from "../sub";
+import { Config } from "../types/config";
 
 
 export const processConfig = async (config: Config, deployments: string[]): Promise<void> => {

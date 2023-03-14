@@ -1,8 +1,8 @@
 import { readFileSync } from "fs";
 import { search } from "jmespath";
-import { Deployment } from "./types/config";
+import { AWSDeployment, Deployment } from "./types/config";
 import { Template } from "./types/template";
-import { isArray, isObject, isString, mapKeys } from './utils';
+import { isArray, isObject, isString, mapObjectValues } from './utils';
 
 const setObjectKeyOrArrayIndex = (input: unknown, expr: string, keyOrIndex: string|number, value: unknown) => {
     const objectOrArray = search(input, expr);
@@ -25,7 +25,7 @@ const evaluateExpr = (input: unknown, expr: string): unknown => {
     throw new Error(`expression '${expr}' does not evaluate`);
 }
 
-const subExprsInString = (input: unknown, str: string): string => {
+const subExprsInString = (input: unknown, str: string): unknown => {
     const openBraces: number[] = [];
     for (let i = 0; i < str.length; i++) {
         if (str.charAt(i) === "{" && str.charAt(i + 1) === "{") {
@@ -39,6 +39,9 @@ const subExprsInString = (input: unknown, str: string): string => {
             }
             const expr = str.substring(startingIndex, endingIndex);
             const result = evaluateExpr(input, expr);
+            if(startingIndex === 0 && i + 2 === str.length) {
+                return result;
+            }
             const final = typeof result === 'object' && result !== null ? JSON.stringify(result) : String(result);
             str = str.substring(0, startingIndex - 2) + final + str.substring(i + 2);
             i = (startingIndex - 2) + final.length - 1;
@@ -56,7 +59,7 @@ const subAllExprsRecursive = (input: unknown, value: unknown): unknown => {
     } else if (isArray(value)) {
         return value.map(v => subAllExprsRecursive(input, v));
     } else if (isObject(value)) {
-        return mapKeys(value, (v => subAllExprsRecursive(input, v)));
+        return mapObjectValues(value, (v => subAllExprsRecursive(input, v)));
     } else {
         return value;
     }
@@ -64,7 +67,7 @@ const subAllExprsRecursive = (input: unknown, value: unknown): unknown => {
 
 export const subAllExprs = <T>(input: T): T => subAllExprsRecursive(input, input) as T;
 
-export const subInTemplate = (template: Template, stack: Deployment): Template => {
+export const subInTemplate = (template: Template, stack: Deployment['specs']['abc']): Template => {
     const clonedTemplate = JSON.parse(JSON.stringify(template)) as Template;
     const subs = template.Metadata?.Substitution;
     if(subs) {
@@ -267,6 +270,7 @@ export const __tests__ = () => {
                 },
                 Resources: {
                     MyResource: {
+                        Type: 'abc',
                         Properties: {
                             Prop1: [],
                             Prop2: {
@@ -276,29 +280,34 @@ export const __tests__ = () => {
                     }
                 }
             };
-            const stack: Deployment = {
+            const stack: AWSDeployment = {
                 provider: 'aws',
-                using: 'template',
                 regions: ['us-east-1'],
-                parameters: {
-                    Sub1: 'abc123',
-                    Sub2: 'xyz098',
-                }
+                specs: {
+                    abc: {
+                        using: 'template',
+                        parameters: {
+                            Sub1: 'abc123',
+                            Sub2: 'xyz098',
+                        },
+                    }
+                },
             };
             const expected: Template = {
                 Metadata: template.Metadata,
                 Resources: {
                     MyResource: {
+                        Type: 'abc',
                         Properties: {
-                            Prop1: stack.parameters?.Sub1,
+                            Prop1: stack.specs.abc.parameters?.Sub1,
                             Prop2: {
-                                Abc: stack.parameters?.Sub2,
+                                Abc: stack.specs.abc.parameters?.Sub2,
                             }
                         }
                     }
                 }
             };
-            const result = subInTemplate(template, stack);
+            const result = subInTemplate(template, stack.specs.abc);
             expect(result).toEqual(expected);
             expect(result).not.toEqual(template);
         });
@@ -306,6 +315,7 @@ export const __tests__ = () => {
             const template: Template = {
                 Resources: {
                     MyResource: {
+                        Type: 'abc',
                         Properties: {
                             Prop1: [],
                             Prop2: {
@@ -315,16 +325,20 @@ export const __tests__ = () => {
                     }
                 }
             };
-            const stack: Deployment = {
+            const stack: AWSDeployment = {
                 provider: 'aws',
-                using: 'template',
                 regions: ['us-east-1'],
-                parameters: {
-                    Sub1: 'abc123',
-                    Sub2: 'xyz098',
-                }
+                specs: {
+                    abc: {
+                        using: 'template',
+                        parameters: {
+                            Sub1: 'abc123',
+                            Sub2: 'xyz098',
+                        },
+                    }
+                },
             };
-            const result = subInTemplate(template, stack);
+            const result = subInTemplate(template, stack.specs.abc);
             expect(result).toEqual(template);
         });
         it('should not alter the template if there is no Metadata.Substitutions section', () => {
@@ -332,6 +346,7 @@ export const __tests__ = () => {
                 Metadata: {},
                 Resources: {
                     MyResource: {
+                        Type: 'abc',
                         Properties: {
                             Prop1: [],
                             Prop2: {
@@ -341,16 +356,20 @@ export const __tests__ = () => {
                     }
                 }
             };
-            const stack: Deployment = {
+            const stack: AWSDeployment = {
                 provider: 'aws',
-                using: 'template',
                 regions: ['us-east-1'],
-                parameters: {
-                    Sub1: 'abc123',
-                    Sub2: 'xyz098',
-                }
+                specs: {
+                    abc: {
+                        using: 'template',
+                        parameters: {
+                            Sub1: 'abc123',
+                            Sub2: 'xyz098',
+                        },
+                    }
+                },
             };
-            const result = subInTemplate(template, stack);
+            const result = subInTemplate(template, stack.specs.abc);
             expect(result).toEqual(template);
         });
         it('should not alter the template if there are no keys in the Metadata.Substitutions section', () => {
@@ -360,6 +379,7 @@ export const __tests__ = () => {
                 },
                 Resources: {
                     MyResource: {
+                        Type: 'abc',
                         Properties: {
                             Prop1: [],
                             Prop2: {
@@ -369,16 +389,20 @@ export const __tests__ = () => {
                     }
                 }
             };
-            const stack: Deployment = {
+            const stack: AWSDeployment = {
                 provider: 'aws',
-                using: 'template',
                 regions: ['us-east-1'],
-                parameters: {
-                    Sub1: 'abc123',
-                    Sub2: 'xyz098',
-                }
+                specs: {
+                    abc: {
+                        using: 'template',
+                        parameters: {
+                            Sub1: 'abc123',
+                            Sub2: 'xyz098',
+                        },
+                    }
+                },
             };
-            const result = subInTemplate(template, stack);
+            const result = subInTemplate(template, stack.specs.abc);
             expect(result).toEqual(template);
         });
         it('should not alter the template if there is no parameters section', () => {
@@ -397,6 +421,7 @@ export const __tests__ = () => {
                 },
                 Resources: {
                     MyResource: {
+                        Type: 'abc',
                         Properties: {
                             Prop1: [],
                             Prop2: {
@@ -406,12 +431,16 @@ export const __tests__ = () => {
                     }
                 }
             };
-            const stack: Deployment = {
+            const stack: AWSDeployment = {
                 provider: 'aws',
-                using: 'template',
                 regions: ['us-east-1'],
+                specs: {
+                    abc: {
+                        using: 'template',
+                    }
+                },
             };
-            const result = subInTemplate(template, stack);
+            const result = subInTemplate(template, stack.specs.abc);
             expect(result).toEqual(template);
         });
         it('should not alter the template if there are no matching parameters for the Metadata.Substitutions section', () => {
@@ -430,6 +459,7 @@ export const __tests__ = () => {
                 },
                 Resources: {
                     MyResource: {
+                        Type: 'abc',
                         Properties: {
                             Prop1: [],
                             Prop2: {
@@ -439,14 +469,18 @@ export const __tests__ = () => {
                     }
                 }
             };
-            const stack: Deployment = {
+            const stack: AWSDeployment = {
                 provider: 'aws',
-                using: 'template',
                 regions: ['us-east-1'],
-                parameters: {
+                specs: {
+                    abc: {
+                        using: 'template',
+                        parameters: {
+                        }
+                    }
                 }
             };
-            const result = subInTemplate(template, stack);
+            const result = subInTemplate(template, stack.specs.abc);
             expect(result).toEqual(template);
         });
     });

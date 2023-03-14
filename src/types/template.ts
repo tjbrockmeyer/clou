@@ -11,12 +11,24 @@ type TemplateSubstitution = {
 
 export type Template = {
     [k: string]: unknown;
-    Parameters?: {
-        [name: string]: unknown;
-    };
     Metadata?: {
         Substitution?: {
             [name: string]: TemplateSubstitution;
+        };
+    };
+    Parameters?: {
+        [name: string]: unknown;
+    };
+    Conditions?: {
+        [name: string]: unknown;
+    };
+    Resources: {
+        [name: string]: {
+            Type: string;
+            Condition?: string[] | string;
+            Properties: {
+                [name: string]: unknown;
+            };
         };
     };
 }

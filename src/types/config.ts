@@ -7,18 +7,24 @@ export type Config = {
   name: string;
   vars?: Record<string, unknown>;
   default?: string | string[];
-  deployments: Record<string, Deployment | Deployment[]>;
+  deployments: Record<string, Deployment>;
 }
 
-export type Deployment = {
+export type Deployment = AWSDeployment;
+
+export type AWSDeployment = {
   provider: 'aws';
-  using: string;
   regions: string | string[];
   preBuild?: string;
   disableRollback?: boolean;
-  parameters?: {
-    [name: string]: unknown;
+  specs: {
+    [name: string]: {
+      using: string;
+      parameters?: {
+        [name: string]: unknown;
+      };
+    };
   };
-}
+};
 
 export const validateConfig = typeValidator<Config>(JSON.parse(readFileSync(path.join(__dirname, '../../schemas/config.json'), 'utf-8')));

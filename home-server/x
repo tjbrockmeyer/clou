@@ -1,0 +1,141 @@
+#!/bin/bash
+
+
+# install certs
+sudo certbot certonly --standalone -d git.teabee.dev -m tyler@teabee.dev
+sudo certbot certonly --standalone -d mail.teabee.dev -m tyler@teabee.dev
+
+# setup cron job for certs
+printf '
+0 6 * * * /usr/bin/certbot renew --deploy-hook /home/ec2-user/certbot-renew-mailu-hook >> /home/ec2-user/certbot-auto-renew.log
+sudo systemctl restart nginx
+' | sudo tee /etc/cron.d/certbot-renew
+
+# mailu
+sudo mkdir /mailu
+sudo mkdir /mailu/setup
+cd /mailu/setup
+printf '
+#!/bin/bash
+cp /etc/letsencrypt/live/mail.teabee.dev/privkey.pem /mailu/certs/key.pem
+cp /etc/letsencrypt/live/mail.teabee.dev/fullchain.pem /mailu/certs/cert.pem
+/usr/local/bin/docker-compose -p mailu exec front nginx -s reload
+' | sudo tee certbot-renew-hook
+sudo chmod 744 certbot-renew-hook
+sudo wget https://setup.mailu.io/1.9/file/f992a278-8a3c-42c6-a816-c32023b8f1d2/docker-compose.yml
+sudo wget https://setup.mailu.io/1.9/file/f992a278-8a3c-42c6-a816-c32023b8f1d2/mailu.env
+docker-compose -p mailu up -d
+sudo bash /mailu/setup/certbot-renew-hook
+docker-compose -p mailu exec admin flask mailu admin admin teabee.dev mymailserver123xyz
+
+# install and configure gitea
+sudo mkdir /gitea
+sudo chown $USER /gitea
+cd /gitea
+sudo useradd -u 1500 -g 1000 git
+sudo -u git ssh-keygen -t ed25519 -N '' -f /home/git/.ssh/id_ed25519 -C "Gitea Host Key"
+sudo -u git cat /home/git/.ssh/id_ed25519.pub | sudo -u git tee -a /home/git/.ssh/authorized_keys
+sudo -u git chmod 600 /home/git/.ssh/authorized_keys
+printf '#!/bin/sh
+ssh -p 222 -o StrictHostKeyChecking=no git@127.0.0.1 "SSH_ORIGINAL_COMMAND=\"$SSH_ORIGINAL_COMMAND\" $0 $@"
+' | sudo tee /usr/local/bin/gitea
+sudo chmod +x /usr/local/bin/gitea
+printf '
+version: "3"
+networks:
+  gitea:
+    external: false
+volumes:
+  gitea:
+    driver: local
+services:
+  server:
+    image: gitea/gitea:1.16.8
+    restart: always
+    container_name: gitea
+    environment:
+      - USER_UID=1500
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=db:5432
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=gitea
+    restart: always
+    networks:
+      - gitea
+    volumes:
+      - gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /home/git/.ssh:/data/git/.ssh
+    ports:
+      - "3000:3000"
+      - "222:22"
+    depends_on:
+      - db
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      - POSTGRES_USER=gitea
+      - POSTGRES_PASSWORD=gitea
+      - POSTGRES_DB=gitea
+    networks:
+      - gitea
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+' | sudo tee docker-compose.yml
+docker-compose -p gitea up -d
+
+# configure nginx
+printf '
+server {
+    server_name git.teabee.dev;
+    listen 443 ssl;
+
+    root /var/www/html;
+
+    ssl_certificate /etc/letsencrypt/live/git.teabee.dev/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/git.teabee.dev/privkey.pem;
+    add_header Strict-Transport-Security "max-age=31536000";
+
+    location / {
+        proxy_pass http://localhost:3000;
+        
+        # Pass on information about the requests to the proxied service using headers
+        proxy_set_header HOST $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+' | sudo tee /etc/nginx/sites-available/gitea
+sudo printf '
+server {
+    server_name mail.teabee.dev;
+    listen 443 ssl;
+
+    root /var/www/html;
+
+    ssl_certificate /etc/letsencrypt/live/mail.teabee.dev/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/mail.teabee.dev/privkey.pem;
+    add_header Strict-Transport-Security "max-age=31536000";
+    
+    proxy_redirect https://localhost https://mail.teabee.dev;
+        
+    # Pass on information about the requests to the proxied service using headers
+    proxy_set_header HOST $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    location / {
+        proxy_pass http://192.168.203.1:8080;
+    }
+}
+' | sudo tee /etc/nginx/sites-available/mailu
+sudo ln -s /etc/nginx/sites-available/gitea /etc/nginx/conf.d/gitea.conf
+sudo ln -s /etc/nginx/sites-available/mailu /etc/nginx/conf.d/mailu.conf
+sudo nginx -t
+sudo systemctl restart nginx

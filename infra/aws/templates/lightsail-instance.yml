@@ -4,6 +4,10 @@ Parameters:
   Name:
     Type: String
     Description: The name of the lightsail instance
+  BundleId:
+    Type: String
+    Description: The bundle id for the instance (the size of the instance)
+    Default: nano_2_0
   AccessKeySerial:
     Type: Number
     Description: The name of the lightsail instance
@@ -20,7 +24,7 @@ Resources:
       KeyPairName: !Ref InstanceKeyPair
       AvailabilityZone: !Sub ${AWS::Region}a
       BlueprintId: amazon_linux_2
-      BundleId: nano_2_0
+      BundleId: !Ref BundleId
       UserData: |
         sudo yum update -y
         sudo yum install -y jq git
@@ -35,6 +39,9 @@ Resources:
         # docker-compose
         sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
         sudo chmod +x /usr/local/bin/docker-compose
+
+        # nginx
+        sudo amazon-linux-extras install -y nginx1
 
         # support for certbot
         sudo wget -r --no-parent -A 'epel-release-*.rpm' https://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/

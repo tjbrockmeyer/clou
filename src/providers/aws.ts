@@ -1,12 +1,12 @@
 import { subInTemplate } from "../sub";
-import { Config, Deployment } from "../types/config";
+import { Config, AWSDeployment, DeploymentSpec, DeploymentSpecs } from "../types/config";
 import aws from 'aws-sdk';
 import path from "path";
 import YAML, { Scalar, ScalarTag, stringify } from 'yaml';
 import { readFile, writeFile } from "fs/promises";
 import { randomInt } from "crypto";
-import { validateTemplate } from "../types/template";
-import { objectFromKeys, spawnAsync } from "../utils";
+import { Template, validateTemplate } from "../types/template";
+import { mapObjectValues, mapObjectValuesAsync, objectFromKeys, spawnAsync } from "../utils";
 import { rm } from "fs/promises";
 
 const customTags: ScalarTag[] = [
@@ -87,27 +87,45 @@ export const awsCache = async (): Promise<AWSCache> => {
     return _awsCache;
 }
 
-export const awsDeployment = async (deploymentConfig: Deployment, config: Config) => {
+const mergeSpecs = async (deployment: AWSDeployment): Promise<Template> => {
+    const specs = deployment.specs;
+    return mapObjectValuesAsync(deployment.specs, async (spec, specName) => {
+        const prefix = `${specName}xx`;
+        const template = validateTemplate(YAML.parse(await readFile(path.join(templateDir, `${spec.using}.yml`), 'utf-8'), { customTags }));
+        const subbedTemplate = subInTemplate(template, spec);
+        const {Metadata, Resources, Conditions, ...templateRest} = subbedTemplate;
+        const {Substitution, ...metadataRest} = Metadata;
+        return {
+            Metadata: {...metadataRest},
+            Resources: mapObjectKeys(mapObjectValues(Resources, ({Condition, ...resourceRest}) => ({
+                Condition: Condition === undefined ? undefined : Condition instanceof Array ? Condition.map(c => `${prefix}${c}`) : `${prefix}${Condition}`,
+                ...resourceRest,
+            })), k => `${prefix}${k}`),
+            ...templateRest,
+        }
+    });
+}
+
+export const awsDeployment = async (config: Config, deploymentName: keyof Config['deployments']) => {
+    const deployment = config.deployments[deploymentName];
     const cache = await awsCache();
-    if (deploymentConfig.preBuild !== undefined) {
-        console.info(`running preBuild command: \`${deploymentConfig.preBuild}\``);
-        await spawnAsync('bash', ['-c', deploymentConfig.preBuild]);
+    if (deployment.preBuild !== undefined) {
+        console.info(`running preBuild command: \`${deployment.preBuild}\``);
+        await spawnAsync('bash', ['-c', deployment.preBuild]);
     }
-    const stackName = `${deploymentConfig.using}-${config.name}`;
-    const regions = typeof deploymentConfig.regions === 'string' ? [deploymentConfig.regions] : deploymentConfig.regions;
+    const stackName = `${config.name}-${deploymentName}`;
+    const regions = typeof deployment.regions === 'string' ? [deployment.regions] : deployment.regions;
     await Promise.all(regions.map(async (region) => {
         const tempTemplate = `.tmp-infra-${randomInt(65565)}`;
         const buildDir = `.aws-sam/build-${stackName}-${region}`;
         const finalTemplate = `${buildDir}/template.yaml`;
         try {
-            const template = validateTemplate(YAML.parse(await readFile(path.join(templateDir, `${deploymentConfig.using}.yml`), 'utf-8'), { customTags }));
-            const subbedTemplate = subInTemplate(template, deploymentConfig);
             await writeFile(tempTemplate, YAML.stringify(subbedTemplate, { customTags }));
             const validParams = new Set(Object.keys(template.Parameters || {}));
-            const params = Object.keys(deploymentConfig.parameters || {}).filter(k => validParams.has(k));
-            const paramsMap = objectFromKeys(params, (k) => (deploymentConfig.parameters as Record<string, unknown>)[k]);
+            const params = Object.keys(deployment.parameters || {}).filter(k => validParams.has(k));
+            const paramsMap = objectFromKeys(params, (k) => (deployment.parameters as Record<string, unknown>)[k]);
             await buildDeployable(tempTemplate, buildDir, region, paramsMap);
-            await deployStack(finalTemplate, stackName, region, cache.s3BucketName, paramsMap, cache.stackNotificationsTopicArn, deploymentConfig.disableRollback);
+            await deployStack(finalTemplate, stackName, region, cache.s3BucketName, paramsMap, cache.stackNotificationsTopicArn, deployment.disableRollback);
         } finally {
             Promise.all([
                 rm(tempTemplate),
